@@ -1,0 +1,40 @@
+# flyctl launch added from .gitignore
+# Rust artifacts
+**/struktura/target
+
+# Shuttle deployment artifacts  
+**/struktura/.shuttle-*
+**/struktura/Shuttle.toml
+**/struktura/Secrets*.toml
+
+# IMPORTANT: Do NOT ignore struktura/.sqlx/ 
+# This directory contains prepared query metadata needed for Docker builds
+# If you're using sqlx compile-time verification, this MUST be committed
+
+# Node artifacts
+**/struktura/static/node_modules
+
+# Built frontend assets (generated from src/)
+#**/struktura/static/dist
+
+# Environment variables
+**/.env
+
+# Mysterious 'y' directory (you know what you did)
+**/struktura/y
+
+# IDE artifacts
+**/struktura/.vscode
+**/.idea
+**/*.iml
+**/*.swp
+**/*.swo
+**/*~
+
+# OS artifacts
+**/.DS_Store
+**/Thumbs.db
+
+# personal utility
+**/run.md
+fly.toml

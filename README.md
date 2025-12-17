@@ -52,7 +52,7 @@ We are seeking corporate partners to help accelerate the transition from MVP to 
 2. **Brand Authority:** Position your company as a leader in the digital transformation of construction.
 3. **Talent Pipeline:** Connect with the developers and engineers building the next generation of AEC tools.
 
-> **Interested in becoming a Founding Sponsor?** Please contact me at **guifernandosantos@gmail.com**. We are currently looking for funding to support dedicated maintainers and cloud infrastructure.
+> **Interested in becoming a Founding Sponsor?** Please contact me at **strukturaenterprise@gmail.com**. We are currently looking for funding to support dedicated maintainers and cloud infrastructure.
 
 ---
 

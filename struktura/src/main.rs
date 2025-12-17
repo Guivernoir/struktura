@@ -38,7 +38,7 @@ struct LangQuery {
     lang: Option<String>,
 }
 
-async fn health_check() {
+async fn health_check() -> axum::http::StatusCode {
     StatusCode::OK
 }
 
@@ -91,7 +91,7 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("Failed to connect to Postgres")?;
 
-    sqlx::migrate!("../migrations").run(&pool).await?;
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
     // 2. Environment Configuration
     let jwt_secret = std::env::var("JWT_SECRET")
