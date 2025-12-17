@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            COUNT(*) as total_count,\n            MAX(accessed_at) as last_activity\n        FROM usage_metrics\n        WHERE user_id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total_count",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "last_activity",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "5962fd0d04ee3a65f15e49f530fe5f7fe5dc9f2689fb1ed74a22832af76283cd"
+}

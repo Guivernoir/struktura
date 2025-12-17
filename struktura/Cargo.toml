@@ -1,0 +1,67 @@
+[package]
+name = "struktura"
+version = "0.3.0"
+edition = "2024"
+authors = ["Guilherme F. G. Santos <guifernandosantos@gmail.com>"]
+
+[dependencies]
+anyhow = "1.0.100"
+argon2 = "0.5.3"
+async-trait = "0.1.89"
+axum = { version = "0.8", features = ["macros"] }
+base64 = "0.22.1"
+chrono = "0.4.42"
+dashmap = "6.1.0"
+dotenvy = "0.15.7"
+governor = "0.10.2"
+hyper = "1.8.1"
+jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
+lazy_static = "1.5.0"
+rand = "0.9.2"
+rand_core = "0.9.3"
+serde = "1.0.228"
+serde_json = "1.0.145"
+sha2 = "0.10.9"
+#shuttle-axum = "0.57.0"
+#shuttle-runtime = "0.57.0" # Added custom-error feature to allow conversion from anyhow::Error
+#shuttle-shared-db = { version = "0.57.0", features = ["postgres", "sqlx"] }
+sqlx = { version = "0.8.6", features = [
+    "postgres",
+    "time",
+    "uuid",
+    "runtime-tokio-rustls",
+] }
+time = { version = "0.3.44", features = ["macros", "serde"] }
+tokio = { version = "1.28.0", features = ["macros", "rt-multi-thread"] }
+tower = { version = "0.4.13", features = ["util"] }
+tower-http = { version = "0.5.2", features = [
+    "compression-br",
+    "compression-gzip",
+    "trace",
+    "timeout",
+    "cors",
+    "request-id",
+    "fs",
+] } # Added request-id feature
+tracing = "0.1.40"
+tracing-subscriber = "0.3.22"
+uuid = { version = "1.8.0", features = [
+    "v4",
+] } # Added v4 feature for Uuid::new_v4()
+validator = { version = "0.18.1", features = [
+    "derive",
+] } # Added validator with derive feature
+
+[dev-dependencies]
+tokio-test = "0.4.4"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "struktura"
+path = "src/main.rs"
+
+#[[bin]]
+#name = "struktura-test"
+#path = "src/main_test.rs"

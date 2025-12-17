@@ -1,0 +1,27 @@
+@font-face {
+  font-family: 'Inter';
+  src: url('./Inter/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('./Space_Grotesk/SpaceGrotesk-VariableFont_wght.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'sans-serif';
+  src: url('./Orbitron/Orbitron-VariableFont_wght.ttf') format('truetype');
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'typeface';
+  src: url('./Marcellus/Marcellus-Regular.ttf') format('truetype');
+  font: 400;
+  font: swap;
+}

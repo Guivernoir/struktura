@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO users (username, hash)\n        VALUES ($1, $2)\n        RETURNING id, username, is_pro, fav_experience_level, created_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "is_pro",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "fav_experience_level",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "9e7846d24e013377aaa60c3e408a880c0f7613a1c2052b42e07f5183f67667be"
+}

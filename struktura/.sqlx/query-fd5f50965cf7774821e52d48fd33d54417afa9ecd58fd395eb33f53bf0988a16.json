@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, username, hash, is_pro, fav_experience_level, created_at \n        FROM users \n        WHERE username = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "hash",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_pro",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "fav_experience_level",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "fd5f50965cf7774821e52d48fd33d54417afa9ecd58fd395eb33f53bf0988a16"
+}

@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            feature_name,\n            COUNT(id) as access_count,\n            MAX(accessed_at) as last_accessed\n        FROM usage_metrics\n        WHERE user_id = $1\n        GROUP BY feature_name\n        ORDER BY access_count DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "feature_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "access_count",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "last_accessed",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "5bb2aefec379469480d04388d6915fa9dd0f089f3c6ed8aef2528fe9c77d9726"
+}

@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE users \n        SET fav_experience_level = $1\n        WHERE id = $2\n        RETURNING username, is_pro, fav_experience_level, created_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_pro",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "fav_experience_level",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "d443886c92a16cce157f52186a14a7a73a17dbdf47c296adadcb2190592f1ab6"
+}
