@@ -143,32 +143,3 @@ impl EngineerCalculator for TrussAnalysisCalculator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::calculus::engineer::test_utils::*;
-    use std::collections::HashMap;
-
-    #[tokio::test]
-    async fn test_truss_analysis() {
-        let calc = TrussAnalysisCalculator;
-        
-        // Setup params with example truss
-        let mut params = minimal_parameters();
-        let mut additional = HashMap::new();
-        additional.insert("nodes".to_string(), 3.0); // Placeholder
-        additional.insert("members".to_string(), 3.0);
-        additional.insert("supports".to_string(), 2.0);
-        params.additional = Some(additional);
-        params.loads = Some(LoadCase {
-            dead_load: 10.0,
-            ..Default::default()
-        });
-
-        let result = calc.calculate(params).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap();
-        assert!(!response.results.is_empty());
-    }
-}

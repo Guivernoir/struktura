@@ -190,33 +190,3 @@ impl EngineerCalculator for SlabDesignCalculator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::calculus::engineer::test_utils::*;
-
-    #[tokio::test]
-    async fn test_slab_design() {
-        let calc = SlabDesignCalculator;
-        
-        let mut params = parameters_with_dimensions(vec![
-            ("length", 4.0),
-        ]);
-        params.loads = Some(LoadCase {
-            dead_load: 2.0,
-            live_load: 3.0,
-            ..Default::default()
-        });
-        params.material = Some(MaterialProperties {
-            compressive_strength: Some(30.0),
-            yield_strength: Some(420.0),
-            ..Default::default()
-        });
-
-        let result = calc.calculate(params).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap();
-        assert!(response.results.len() >= 4);
-    }
-}

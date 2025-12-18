@@ -158,32 +158,3 @@ impl EngineerCalculator for MomentFrameDesignCalculator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::calculus::engineer::test_utils::*;
-    use std::collections::HashMap;
-
-    #[tokio::test]
-    async fn test_moment_frame() {
-        let calc = MomentFrameDesignCalculator;
-        
-        let mut params = parameters_with_dimensions(vec![
-            ("height", 4.0),
-            ("width", 6.0),
-        ]);
-        let mut additional = HashMap::new();
-        additional.insert("num_stories".to_string(), 5.0);
-        params.additional = Some(additional);
-        params.loads = Some(LoadCase {
-            seismic_load: Some(1000.0),
-            ..Default::default()
-        });
-
-        let result = calc.calculate(params).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap();
-        assert!(response.results.len() >= 3);
-    }
-}

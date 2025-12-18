@@ -95,7 +95,7 @@ const EngineerCalculator = () => {
       </div>
 
       {/* Category Selection */}
-      <div className="mb-8 flex flex-col items-center">
+      <div className="mb-8">
         <CategorySelector
           t={t}
           categories={categories}

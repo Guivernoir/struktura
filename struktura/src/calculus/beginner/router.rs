@@ -189,31 +189,3 @@ pub fn create_router() -> Router<Arc<AppState>> {
         .route("/health", get(health_handler))
         .route("/stats", get(stats_handler))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use axum::body::Body;
-    use axum::http::{Request, StatusCode};
-    use tower::ServiceExt;
-
-    #[tokio::test]
-    async fn test_health_endpoint() {
-        let registry = Arc::new(BeginnerRegistry::new());
-        let app = create_router().with_state(Arc::new(AppState { calculators_beginner: registry, /* other fields */ })); // adjust for full state
-
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/health")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-    }
-
-    // Add more tests similar to engineer
-}

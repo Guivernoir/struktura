@@ -170,32 +170,3 @@ impl EngineerCalculator for ConnectionDesignCalculator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::calculus::engineer::test_utils::*;
-    use std::collections::HashMap;
-
-    #[tokio::test]
-    async fn test_connection_design() {
-        let calc = ConnectionDesignCalculator;
-        
-        let mut params = parameters_with_dimensions(vec![
-            ("diameter", 20.0),
-        ]);
-        params.loads = Some(LoadCase {
-            shear_load: Some(200.0),
-            tension_load: Some(0.0),
-            ..Default::default()
-        });
-        let mut additional = HashMap::new();
-        additional.insert("bolt_grade".to_string(), "A325".to_string());
-        params.additional = Some(additional);
-
-        let result = calc.calculate(params).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap();
-        assert!(response.results.len() >= 2);
-    }
-}

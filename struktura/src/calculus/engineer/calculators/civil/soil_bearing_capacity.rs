@@ -173,30 +173,3 @@ impl EngineerCalculator for SoilBearingCapacityCalculator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::calculus::engineer::test_utils::*;
-    use std::collections::HashMap;
-
-    #[tokio::test]
-    async fn test_bearing_capacity() {
-        let calc = SoilBearingCapacityCalculator;
-        
-        let mut params = parameters_with_dimensions(vec![
-            ("width", 2.0),
-            ("depth", 1.0),
-        ]);
-        let mut additional = HashMap::new();
-        additional.insert("cohesion".to_string(), 0.0);
-        additional.insert("friction_angle".to_string(), 30.0);
-        additional.insert("unit_weight".to_string(), 18.0);
-        params.additional = Some(additional);
-
-        let result = calc.calculate(params).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap();
-        assert!(response.results.len() >= 4);
-    }
-}

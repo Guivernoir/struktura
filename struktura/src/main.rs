@@ -1,3 +1,11 @@
+/*
+ * Project: Struktura (https://struktura.fly.dev)
+ * Copyright (c) 2025 [Your Name/Company]
+ * * Licensed under Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0).
+ * Commercial use, resale, or hosting of this software for profit is strictly prohibited 
+ * without express written approval.
+ */
+
 use axum::{
     http::{StatusCode, Method, HeaderValue, HeaderName},
     routing::{get, post, put},

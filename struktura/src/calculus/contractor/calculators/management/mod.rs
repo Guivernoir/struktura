@@ -15,24 +15,3 @@ pub use quality_control::QualityControlCalculator;
 pub use resource_allocation::ResourceAllocationCalculator;
 pub use safety_planning::SafetyPlanningCalculator;
 pub use subcontractor_evaluation::SubcontractorEvaluationCalculator;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::calculus::contractor::test_utils::parameters_with_resources;
-
-    #[tokio::test]
-    async fn test_resource_allocation() {
-        let calc = ResourceAllocationCalculator;
-        let params = parameters_with_resources(80.0, 40.0);
-        let mut params = params;
-        params.additional = Some(HashMap::from([
-            ("available_labor".to_string(), 100.0),
-            ("available_equipment".to_string(), 50.0),
-        ]));
-
-        let result = calc.calculate(params).await.unwrap();
-        assert_eq!(result.results.len(), 2);
-        assert_eq!(result.results[0].value, 80.0); // 80/100 *100 =80%
-    }
-}

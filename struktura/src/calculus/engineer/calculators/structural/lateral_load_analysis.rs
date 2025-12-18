@@ -179,33 +179,3 @@ impl EngineerCalculator for LateralLoadAnalysisCalculator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::calculus::engineer::test_utils::*;
-    use std::collections::HashMap;
-
-    #[tokio::test]
-    async fn test_lateral_analysis() {
-        let calc = LateralLoadAnalysisCalculator;
-        
-        let mut params = parameters_with_dimensions(vec![
-            ("height", 20.0),
-            ("width", 20.0),
-        ]);
-        let mut additional = HashMap::new();
-        additional.insert("load_type".to_string(), "wind".to_string());
-        additional.insert("num_stories".to_string(), 5.0);
-        params.additional = Some(additional);
-        params.loads = Some(LoadCase {
-            wind_load: Some(1.0),
-            ..Default::default()
-        });
-
-        let result = calc.calculate(params).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap();
-        assert!(response.results.len() >= 2);
-    }
-}

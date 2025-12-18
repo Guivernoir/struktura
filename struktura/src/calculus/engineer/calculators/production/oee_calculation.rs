@@ -36,62 +36,160 @@ impl EngineerCalculator for OEECalculator {
             "Overall Equipment Effectiveness (OEE) Calculation"
         )
         .category("production")
-        .description("Calculate OEE based on availability, performance, and quality metrics per lean manufacturing principles")
+        .description("Calculate OEE from raw field data based on lean manufacturing principles")
         .design_code("Lean Manufacturing")
         .parameter(ParameterMetadata {
-            name: "Availability".to_string(),
-            path: "additional.availability".to_string(),
+            name: "Total Shift Time".to_string(),
+            path: "additional.total_shift_time".to_string(),
             data_type: ParameterType::Number,
-            unit: "%".to_string(),
-            description: "Percentage of time equipment is available for production".to_string(),
+            unit: "min".to_string(),
+            description: "Total scheduled shift time in minutes".to_string(),
             required: true,
-            default_value: Some(90.0),
-            min_value: Some(0.0),
-            max_value: Some(100.0),
-            typical_range: Some((80.0, 95.0)),
-            validation_rules: None,
+            default_value: Some(480.0),
+            min_value: Some(0.1),
+            max_value: None,
+            typical_range: Some((240.0, 1440.0)),
+            validation_rules: Some(vec!["Must be positive".to_string()]),
         })
         .parameter(ParameterMetadata {
-            name: "Performance".to_string(),
-            path: "additional.performance".to_string(),
+            name: "Planned Downtime".to_string(),
+            path: "additional.planned_downtime".to_string(),
             data_type: ParameterType::Number,
-            unit: "%".to_string(),
-            description: "Percentage of maximum speed achieved".to_string(),
-            required: true,
-            default_value: Some(95.0),
+            unit: "min".to_string(),
+            description: "Planned downtime (e.g., breaks, scheduled maintenance) in minutes".to_string(),
+            required: false,
+            default_value: Some(0.0),
             min_value: Some(0.0),
-            max_value: Some(100.0),
-            typical_range: Some((85.0, 98.0)),
-            validation_rules: None,
+            max_value: None,
+            typical_range: Some((0.0, 120.0)),
+            validation_rules: Some(vec!["Must be non-negative and less than total shift time".to_string()]),
         })
         .parameter(ParameterMetadata {
-            name: "Quality".to_string(),
-            path: "additional.quality".to_string(),
+            name: "Unplanned Downtime".to_string(),
+            path: "additional.unplanned_downtime".to_string(),
             data_type: ParameterType::Number,
-            unit: "%".to_string(),
-            description: "Percentage of good parts produced".to_string(),
+            unit: "min".to_string(),
+            description: "Unplanned downtime (e.g., breakdowns) in minutes".to_string(),
             required: true,
-            default_value: Some(98.0),
+            default_value: Some(0.0),
             min_value: Some(0.0),
-            max_value: Some(100.0),
-            typical_range: Some((95.0, 99.9)),
-            validation_rules: None,
+            max_value: None,
+            typical_range: Some((0.0, 240.0)),
+            validation_rules: Some(vec!["Must be non-negative and allow positive operating time".to_string()]),
+        })
+        .parameter(ParameterMetadata {
+            name: "Ideal Cycle Time".to_string(),
+            path: "additional.ideal_cycle_time".to_string(),
+            data_type: ParameterType::Number,
+            unit: "sec/piece".to_string(),
+            description: "Ideal time to produce one piece in seconds".to_string(),
+            required: true,
+            default_value: Some(60.0),
+            min_value: Some(0.001),
+            max_value: None,
+            typical_range: Some((1.0, 300.0)),
+            validation_rules: Some(vec!["Must be positive".to_string()]),
+        })
+        .parameter(ParameterMetadata {
+            name: "Total Pieces".to_string(),
+            path: "additional.total_pieces".to_string(),
+            data_type: ParameterType::Number,
+            unit: "pieces".to_string(),
+            description: "Total pieces produced (good + defective)".to_string(),
+            required: true,
+            default_value: Some(0.0),
+            min_value: Some(0.0),
+            max_value: None,
+            typical_range: Some((0.0, 10000.0)),
+            validation_rules: Some(vec!["Must be non-negative integer (use float for fractional if needed)".to_string()]),
+        })
+        .parameter(ParameterMetadata {
+            name: "Good Pieces".to_string(),
+            path: "additional.good_pieces".to_string(),
+            data_type: ParameterType::Number,
+            unit: "pieces".to_string(),
+            description: "Good quality pieces produced".to_string(),
+            required: true,
+            default_value: Some(0.0),
+            min_value: Some(0.0),
+            max_value: None,
+            typical_range: Some((0.0, 10000.0)),
+            validation_rules: Some(vec!["Must be non-negative and <= total pieces".to_string()]),
         })
         .complexity(ComplexityLevel::Basic)
         .build()
     }
 
     fn validate(&self, params: &EngineeringParameters) -> EngineeringResult<()> {
-        self.get_additional_param(params, "availability", Some(0.0), Some(100.0))?;
-        self.get_additional_param(params, "performance", Some(0.0), Some(100.0))?;
-        self.get_additional_param(params, "quality", Some(0.0), Some(100.0))?;
+        let total_shift_time = self.get_additional_param(params, "total_shift_time", Some(0.1), None)?;
+        let planned_downtime = self.get_additional_param(params, "planned_downtime", Some(0.0), None).unwrap_or(0.0);
+        let unplanned_downtime = self.get_additional_param(params, "unplanned_downtime", Some(0.0), None)?;
+        let ideal_cycle_time = self.get_additional_param(params, "ideal_cycle_time", Some(0.001), None)?;
+        let total_pieces = self.get_additional_param(params, "total_pieces", Some(0.0), None)?;
+        let good_pieces = self.get_additional_param(params, "good_pieces", Some(0.0), None)?;
+
+        if planned_downtime > total_shift_time {
+            return Err(EngineeringError::InvalidParameter {
+                parameter: "planned_downtime".to_string(),
+                value: planned_downtime.to_string(),
+                reason: "Cannot exceed total shift time".to_string(),
+            });
+        }
+
+        let planned_production_time = total_shift_time - planned_downtime;
+        if unplanned_downtime > planned_production_time {
+            return Err(EngineeringError::InvalidParameter {
+                parameter: "unplanned_downtime".to_string(),
+                value: unplanned_downtime.to_string(),
+                reason: "Cannot exceed planned production time (total shift - planned downtime)".to_string(),
+            });
+        }
+
+        let operating_time = planned_production_time - unplanned_downtime;
+        if operating_time <= 0.0 {
+            return Err(EngineeringError::DomainError {
+                field: "operating_time".to_string(),
+                message: "Must be positive (adjust downtimes)".to_string(),
+            });
+        }
+
+        if good_pieces > total_pieces {
+            return Err(EngineeringError::InvalidParameter {
+                parameter: "good_pieces".to_string(),
+                value: good_pieces.to_string(),
+                reason: "Cannot exceed total pieces".to_string(),
+            });
+        }
+
+        if ideal_cycle_time <= 0.0 {
+            return Err(EngineeringError::InvalidParameter {
+                parameter: "ideal_cycle_time".to_string(),
+                value: ideal_cycle_time.to_string(),
+                reason: "Must be positive".to_string(),
+            });
+        }
+
         Ok(())
     }
 
     async fn calculate(&self, params: EngineeringParameters) -> EngineeringResult<EngineeringCalculationResponse> {
-        let availability = self.get_additional_param(&params, "availability", None, None)?;
-        let performance = self.get_additional_param(&params, "performance", None, None)?;
-        let quality = self.get_additional_param(&params, "quality", None, None)?;
+        let total_shift_time = self.get_additional_param(&params, "total_shift_time", None, None)?;
+        let planned_downtime = self.get_additional_param(&params, "planned_downtime", None, None).unwrap_or(0.0);
+        let unplanned_downtime = self.get_additional_param(&params, "unplanned_downtime", None, None)?;
+        let ideal_cycle_time = self.get_additional_param(&params, "ideal_cycle_time", None, None)?;
+        let total_pieces = self.get_additional_param(&params, "total_pieces", None, None)?;
+        let good_pieces = self.get_additional_param(&params, "good_pieces", None, None)?;
+
+        let planned_production_time = total_shift_time - planned_downtime;
+        let operating_time = planned_production_time - unplanned_downtime;
+
+        let availability = (operating_time / planned_production_time) * 100.0;
+
+        let operating_time_sec = operating_time * 60.0;
+        let ideal_pieces = if ideal_cycle_time > 0.0 { operating_time_sec / ideal_cycle_time } else { 0.0 };
+        let performance = if ideal_pieces > 0.0 { (total_pieces / ideal_pieces) * 100.0 } else { 0.0 };
+
+        let quality = if total_pieces > 0.0 { (good_pieces / total_pieces) * 100.0 } else { 0.0 };
 
         let oee_value = oee(availability, performance, quality);
 
@@ -116,9 +214,12 @@ impl EngineerCalculator for OEECalculator {
             EngineeringResultItem::new("OEE", oee_value, "%")
                 .critical()
                 .with_format(format!("{:.1}%", oee_value)),
-            EngineeringResultItem::new("Availability", availability, "%"),
-            EngineeringResultItem::new("Performance", performance, "%"),
-            EngineeringResultItem::new("Quality", quality, "%"),
+            EngineeringResultItem::new("Availability", availability, "%")
+                .with_format(format!("{:.1}%", availability)),
+            EngineeringResultItem::new("Performance", performance, "%")
+                .with_format(format!("{:.1}%", performance)),
+            EngineeringResultItem::new("Quality", quality, "%")
+                .with_format(format!("{:.1}%", quality)),
         ];
 
         Ok(EngineeringCalculationResponse {
@@ -151,27 +252,51 @@ mod tests {
         
         let mut params = minimal_parameters();
         let mut additional = HashMap::new();
-        additional.insert("availability".to_string(), 90.0);
-        additional.insert("performance".to_string(), 95.0);
-        additional.insert("quality".to_string(), 98.0);
+        additional.insert("total_shift_time".to_string(), 480.0); // 8 hours
+        additional.insert("planned_downtime".to_string(), 30.0);
+        additional.insert("unplanned_downtime".to_string(), 45.0);
+        additional.insert("ideal_cycle_time".to_string(), 60.0); // 1 min per piece
+        additional.insert("total_pieces".to_string(), 400.0);
+        additional.insert("good_pieces".to_string(), 380.0);
         params.additional = Some(additional);
 
         let result = calc.calculate(params).await;
         assert!(result.is_ok());
 
         let response = result.unwrap();
-        assert!(response.results.len() == 4);
+        assert_eq!(response.results.len(), 4);
     }
 
     #[test]
-    fn test_invalid_percentage() {
+    fn test_invalid_downtime() {
         let calc = OEECalculator;
         
         let mut params = minimal_parameters();
         let mut additional = HashMap::new();
-        additional.insert("availability".to_string(), 110.0); // Invalid
-        additional.insert("performance".to_string(), 95.0);
-        additional.insert("quality".to_string(), 98.0);
+        additional.insert("total_shift_time".to_string(), 480.0);
+        additional.insert("planned_downtime".to_string(), 30.0);
+        additional.insert("unplanned_downtime".to_string(), 500.0); // Invalid: exceeds planned production time
+        additional.insert("ideal_cycle_time".to_string(), 60.0);
+        additional.insert("total_pieces".to_string(), 400.0);
+        additional.insert("good_pieces".to_string(), 380.0);
+        params.additional = Some(additional);
+
+        let result = calc.validate(&params);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_invalid_pieces() {
+        let calc = OEECalculator;
+        
+        let mut params = minimal_parameters();
+        let mut additional = HashMap::new();
+        additional.insert("total_shift_time".to_string(), 480.0);
+        additional.insert("planned_downtime".to_string(), 30.0);
+        additional.insert("unplanned_downtime".to_string(), 45.0);
+        additional.insert("ideal_cycle_time".to_string(), 60.0);
+        additional.insert("total_pieces".to_string(), 400.0);
+        additional.insert("good_pieces".to_string(), 450.0); // Invalid: exceeds total pieces
         params.additional = Some(additional);
 
         let result = calc.validate(&params);
