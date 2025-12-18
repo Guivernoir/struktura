@@ -60,7 +60,9 @@ const CalculatorForm = ({
             }}
             className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition"
           >
-            <option value="">Select...</option>
+            <option value="">
+              {t?.engineer?.form?.select_placeholder || "Select..."}
+            </option>
             {options.map((opt) => (
               <option key={opt} value={opt}>
                 {opt.charAt(0).toUpperCase() + opt.slice(1)} {/* Capitalize */}
@@ -153,7 +155,7 @@ const CalculatorForm = ({
     return (
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-charcoal-700 dark:text-steel-300">
-          Design Code
+          {t?.engineer?.form?.design_code || "Design Code"}
         </label>
         <select
           value={formData.design_code || ""}
@@ -168,7 +170,9 @@ const CalculatorForm = ({
           }}
           className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white focus:ring-amber-500 focus:border-amber-500"
         >
-          <option value="">Select Design Code</option>
+          <option value="">
+            {t?.engineer?.form?.select_design_code || "Select Design Code"}
+          </option>
           {calculatorMeta.design_codes.map((code) => (
             <option key={code} value={code}>
               {DesignCodeNames[code] || code}
@@ -184,7 +188,7 @@ const CalculatorForm = ({
       {/* Calculator Selector */}
       <div>
         <label className="text-sm font-medium text-charcoal-700 dark:text-steel-300 block mb-2">
-          Select Calculator
+          {t?.engineer?.form?.select_calculator || "Select Calculator"}
         </label>
         <select
           value={selectedCalculator || ""}
@@ -192,7 +196,9 @@ const CalculatorForm = ({
           className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white"
           disabled={calculators.length === 0}
         >
-          <option value="">Choose a calculator...</option>
+          <option value="">
+            {t?.engineer?.form?.choose_calculator || "Choose a calculator..."}
+          </option>
           {calculators.map((calc) => (
             <option key={calc.id} value={calc.id}>
               {calc.name}
@@ -204,11 +210,26 @@ const CalculatorForm = ({
       {selectedCalculator && calculatorMeta && (
         <>
           {/* Sections */}
-          {renderSection("dimensions", "Dimensions")}
-          {renderSection("material", "Material Properties")}
-          {renderSection("loads", "Load Cases")}
-          {renderSection("safetyFactors", "Safety Factors")}
-          {renderSection("additional", "Additional Parameters")}
+          {renderSection(
+            "dimensions",
+            t?.engineer?.form?.sections?.dimensions || "Dimensions"
+          )}
+          {renderSection(
+            "material",
+            t?.engineer?.form?.sections?.material || "Material Properties"
+          )}
+          {renderSection(
+            "loads",
+            t?.engineer?.form?.sections?.loads || "Load Cases"
+          )}
+          {renderSection(
+            "safetyFactors",
+            t?.engineer?.form?.sections?.safety_factors || "Safety Factors"
+          )}
+          {renderSection(
+            "additional",
+            t?.engineer?.form?.sections?.additional || "Additional Parameters"
+          )}
 
           {/* Top-level fields like designCode, exposureClass, etc. */}
           <div className="space-y-4">
@@ -237,19 +258,21 @@ const CalculatorForm = ({
         {isLoading ? (
           <>
             <Icon name="Loader2" size={18} className="animate-spin" />
-            Calculating...
+            {t?.engineer?.form?.calculating || "Calculating..."}
           </>
         ) : (
           <>
             <Icon name="Play" size={18} />
-            Calculate
+            {t?.engineer?.form?.calculate || "Calculate"}
           </>
         )}
       </button>
 
       {calculatorMeta?.required_parameters?.length > 0 && (
         <p className="text-xs text-charcoal-500 dark:text-steel-500 text-center">
-          <span className="text-red-500">*</span> Required fields must be filled
+          <span className="text-red-500">*</span>{" "}
+          {t?.engineer?.form?.required_fields ||
+            "Required fields must be filled"}
         </p>
       )}
     </div>

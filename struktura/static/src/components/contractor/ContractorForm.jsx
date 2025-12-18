@@ -12,11 +12,6 @@ const ContractorForm = ({
   calculatorMeta,
   formData,
   handleFormEvent,
-  updateDimension,
-  updateMaterial,
-  updateResource,
-  updateSafetyFactor,
-  updateAdditional,
   handleCalculate,
   handleCalculateDetailed,
   handleCalculateSummary,
@@ -40,22 +35,20 @@ const ContractorForm = ({
 
   const renderParameterInput = (param) => {
     const pathParts = param.path.split(".");
-    const section = pathParts[0];
     let value = formData;
     pathParts.forEach((part) => {
       value = value?.[part];
     });
 
-    // Handle different data types
     const isNumber =
       param.data_type === "number" || param.data_type === "integer";
-    const isString = param.data_type === "string";
 
     return (
       <div key={param.path} className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-charcoal-700 dark:text-steel-300 flex items-center gap-1.5">
-            {param.name}
+            {param.name}{" "}
+            {/* Note: Param names usually come from backend. If static, wrap in t() */}
             {param.required && <span className="text-red-500 text-sm">*</span>}
           </label>
           {param.unit && (
@@ -75,25 +68,18 @@ const ContractorForm = ({
           placeholder={param.description}
           className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white focus:ring-amber-500 focus:border-amber-500 transition"
         />
-        {param.typical_range && (
-          <p className="text-xs text-charcoal-400 dark:text-steel-600">
-            Typical: {param.typical_range[0]} - {param.typical_range[1]}{" "}
-            {param.unit}
-          </p>
-        )}
       </div>
     );
   };
 
-  const getSectionParameters = (section) => {
-    return (calculatorMeta?.parameters || []).filter((param) =>
+  const renderSection = (section, titleKey) => {
+    const params = (calculatorMeta?.parameters || []).filter((param) =>
       param.path.startsWith(section + ".")
     );
-  };
-
-  const renderSection = (section, title) => {
-    const params = getSectionParameters(section);
     if (params.length === 0) return null;
+
+    // Translate the section title
+    const title = t.contractor?.sections?.[titleKey] || titleKey;
 
     return (
       <div className="space-y-3">
@@ -116,46 +102,10 @@ const ContractorForm = ({
     );
   };
 
-  const renderRegulationCodeSelector = () => {
-    if (!calculatorMeta?.regulation_codes?.length) return null;
-
-    return (
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-charcoal-700 dark:text-steel-300">
-          Regulation Code
-        </label>
-        <select
-          value={formData.regulation_code || ""}
-          onChange={(e) => {
-            const event = {
-              target: {
-                name: "regulation_code",
-                value: e.target.value,
-              },
-            };
-            handleFormEvent(event);
-          }}
-          className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white focus:ring-amber-500 focus:border-amber-500"
-        >
-          <option value="">Select Regulation Code</option>
-          {calculatorMeta.regulation_codes.map((code) => (
-            <option key={code} value={code}>
-              {RegulationCodeNames[code] || code}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  };
-
   const handleCalculateClick = () => {
-    if (outputFormat === "detailed") {
-      handleCalculateDetailed();
-    } else if (outputFormat === "summary") {
-      handleCalculateSummary();
-    } else {
-      handleCalculate();
-    }
+    if (outputFormat === "detailed") handleCalculateDetailed();
+    else if (outputFormat === "summary") handleCalculateSummary();
+    else handleCalculate();
   };
 
   return (
@@ -163,7 +113,7 @@ const ContractorForm = ({
       {/* Calculator Selector */}
       <div>
         <label className="text-sm font-medium text-charcoal-700 dark:text-steel-300 block mb-2">
-          Select Calculator
+          {t.contractor?.form?.select_calc || "Select Calculator"}
         </label>
         <select
           value={selectedCalculator || ""}
@@ -171,7 +121,9 @@ const ContractorForm = ({
           className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white focus:ring-amber-500 focus:border-amber-500"
           disabled={calculators.length === 0}
         >
-          <option value="">Choose a calculator...</option>
+          <option value="">
+            {t.contractor?.form?.choose_calc || "Choose a calculator..."}
+          </option>
           {calculators.map((calc) => (
             <option key={calc.value} value={calc.value}>
               {calc.label}
@@ -182,49 +134,23 @@ const ContractorForm = ({
 
       {selectedCalculator && calculatorMeta && (
         <>
-          {/* Calculator Description */}
           {calculatorMeta.description && (
             <div className="p-3 bg-amber-50 dark:bg-amber-900/10 rounded-lg text-xs text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-800">
               {calculatorMeta.description}
             </div>
           )}
 
-          {/* Sections */}
-          {renderSection("dimensions", "Dimensions")}
-          {renderSection("material", "Material Properties")}
-          {renderSection("resources", "Resource Requirements")}
-          {renderSection("safety_factors", "Safety Factors")}
-          {renderSection("additional", "Additional Parameters")}
-          {renderSection("project_metadata", "Project Information")}
+          {renderSection("dimensions", "dimensions")}
+          {renderSection("material", "material")}
+          {renderSection("resources", "resources")}
+          {renderSection("safety_factors", "safety_factors")}
+          {renderSection("additional", "additional")}
+          {renderSection("project_metadata", "project_info")}
 
-          {/* Top-level fields */}
-          <div className="space-y-4">
-            {renderRegulationCodeSelector()}
-
-            {/* Exposure Class */}
-            {calculatorMeta.parameters?.some(
-              (p) => p.path === "exposure_class"
-            ) && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-charcoal-700 dark:text-steel-300">
-                  Exposure Class
-                </label>
-                <input
-                  type="text"
-                  name="exposure_class"
-                  value={formData.exposure_class || ""}
-                  onChange={handleFormEvent}
-                  placeholder="e.g., C1, C2, C3"
-                  className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white focus:ring-amber-500 focus:border-amber-500"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Output Format Selector */}
+          {/* Output Format */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-charcoal-700 dark:text-steel-300">
-              Output Format
+              {t.contractor?.form?.output_format || "Output Format"}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {["standard", "detailed", "summary"].map((format) => (
@@ -237,7 +163,9 @@ const ContractorForm = ({
                       : "bg-sand-100 dark:bg-charcoal-800 text-charcoal-700 dark:text-steel-300 hover:bg-sand-200 dark:hover:bg-charcoal-700"
                   }`}
                 >
-                  {format.charAt(0).toUpperCase() + format.slice(1)}
+                  {/* Translate formats: standard, detailed, summary */}
+                  {t.contractor?.formats?.[format] ||
+                    format.charAt(0).toUpperCase() + format.slice(1)}
                 </button>
               ))}
             </div>
@@ -264,21 +192,15 @@ const ContractorForm = ({
         {isLoading ? (
           <>
             <Icon name="Loader2" size={18} className="animate-spin" />
-            Calculating...
+            {t.contractor?.form?.calculating || "Calculating..."}
           </>
         ) : (
           <>
             <Icon name="Calculator" size={18} />
-            Calculate {outputFormat !== "standard" && `(${outputFormat})`}
+            {t.contractor?.form?.calculate || "Calculate"}
           </>
         )}
       </button>
-
-      {calculatorMeta?.required_parameters?.length > 0 && (
-        <p className="text-xs text-charcoal-500 dark:text-steel-500 text-center">
-          <span className="text-red-500">*</span> Required fields must be filled
-        </p>
-      )}
     </div>
   );
 };

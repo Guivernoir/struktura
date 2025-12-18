@@ -8,33 +8,22 @@ const BeginnerCalculator = () => {
   const { lang, theme, t } = useOutletContext();
 
   const {
-    // Catalogue
     catalogue,
     categories,
     calculatorsInCategory,
-
-    // Selection
     selectedCategory,
     setSelectedCategory,
     selectedCalculator,
     setSelectedCalculator,
-
-    // Inputs
     inputs,
     isLoadingInputs,
-
-    // Form
     formData,
     handleInputChange,
-
-    // Calculation
     handleCalculate,
     results,
     warnings,
     isLoading,
     clearResults,
-
-    // Error
     error,
   } = useBeginnerCalculator();
 
@@ -55,7 +44,7 @@ const BeginnerCalculator = () => {
       <div className="mb-12 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-950/50 dark:to-emerald-950/50 rounded-full mb-6 border border-green-200 dark:border-green-800">
           <span className="text-xs font-bold text-green-900 dark:text-green-100 uppercase tracking-wider">
-            DIY & Home Projects
+            {getLabel("beginner.badge")}
           </span>
         </div>
 
@@ -70,7 +59,9 @@ const BeginnerCalculator = () => {
         {catalogue?.disclaimer && (
           <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border-l-4 border-green-500 max-w-2xl mx-auto">
             <p className="text-sm text-green-900 dark:text-green-100">
-              <strong className="font-semibold">Note:</strong>{" "}
+              <strong className="font-semibold">
+                {getLabel("beginner.note_label")}:
+              </strong>{" "}
               {catalogue.disclaimer}
             </p>
           </div>
@@ -133,20 +124,20 @@ const BeginnerCalculator = () => {
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
             <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100 uppercase tracking-wide mb-3 flex items-center gap-2">
               <span className="text-blue-600 dark:text-blue-400">💡</span>
-              Pro Tips
+              {getLabel("beginner.info_cards.tips.title")}
             </h3>
             <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                <span>Always check local building codes before starting</span>
+                <span>{getLabel("beginner.info_cards.tips.item_1")}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                <span>Add 10-15% extra for material waste</span>
+                <span>{getLabel("beginner.info_cards.tips.item_2")}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                <span>Consider seasonal pricing variations</span>
+                <span>{getLabel("beginner.info_cards.tips.item_3")}</span>
               </li>
             </ul>
           </div>
@@ -155,7 +146,7 @@ const BeginnerCalculator = () => {
           {inputs.metadata.typical_applications && (
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
               <h3 className="text-sm font-bold text-purple-900 dark:text-purple-100 uppercase tracking-wide mb-3">
-                Common Uses
+                {getLabel("beginner.info_cards.common_uses")}
               </h3>
               <ul className="space-y-2 text-sm text-purple-800 dark:text-purple-200">
                 {inputs.metadata.typical_applications
@@ -174,11 +165,10 @@ const BeginnerCalculator = () => {
           <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 rounded-xl p-6 border border-orange-200 dark:border-orange-800">
             <h3 className="text-sm font-bold text-orange-900 dark:text-orange-100 uppercase tracking-wide mb-3 flex items-center gap-2">
               <span className="text-orange-600 dark:text-orange-400">⚠️</span>
-              Safety First
+              {getLabel("beginner.info_cards.safety.title")}
             </h3>
             <p className="text-sm text-orange-800 dark:text-orange-200">
-              These calculations are estimates. For structural projects or
-              permits, consult a licensed professional.
+              {getLabel("beginner.info_cards.safety.text")}
             </p>
           </div>
         </div>
@@ -188,8 +178,7 @@ const BeginnerCalculator = () => {
       <div className="mt-12 p-4 bg-sand-50 dark:bg-charcoal-900 rounded-xl border border-sand-200 dark:border-charcoal-800">
         <p className="text-xs text-center text-charcoal-500 dark:text-steel-500">
           <strong>{getLabel("disclaimer.title")}:</strong>{" "}
-          {getLabel("disclaimer.text") ||
-            "These calculations are estimates for planning purposes. Always verify measurements and consult local building codes before starting any project."}
+          {getLabel("disclaimer.text")}
         </p>
       </div>
     </div>

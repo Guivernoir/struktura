@@ -51,42 +51,70 @@ export const it = {
     },
   },
   beginner: {
+    badge: "Progetti DIY e Casa",
     title: "L'Angolo del Fai-da-te: Cominciamo!",
+    subtitle:
+      "Liste dei materiali e carrelli della spesa. Costruisci senza il mal di testa della matematica.",
+    note_label: "Nota",
+
     categories: {
       outdoors: "Esterni & Strutture",
       interiors: "Interni & Finiture",
       utilities: "Strumenti & Utilità",
       garden: "Paesaggistica & Giardino",
     },
+
     calcs: {
       deck: "Materiali per Struttura del Deck",
       fence: "Conteggio Pali Recinzione",
       concrete_slab: "Soletta di Cemento (Volume e Armatura)",
-      retaining_wall: "Materiali per Muro di Contenimento",
+      wall_framing: "Legno per Ossatura Murale",
       drywall_count: "Conteggio Lastre di Cartongesso",
       paint_coverage: "Galloni di Vernice Necessari",
       tile_count: "Conteggio Piastrelle per Pavimento",
       planter_box: "Legno e Terra per Fioriera",
       soil_volume: "Volume di Terra (M³)",
     },
+
     form: {
       title: "Dimensioni del Tuo Progetto",
-      calculation_type: "Cosa stai costruendo?",
-      width: "Larghezza",
-      length: "Lunghezza",
-      height: "Altezza",
-      calculate_btn: "Calcola Materiali",
+      select_project: "Cosa stai costruendo?",
+      choose_project: "Scegli un progetto...",
+      dimensions: "Dimensioni",
+      typical_range: "Tipico",
+      calculating: "Calcolo in corso...",
+      calculate: "Calcola Materiali",
+      help_text: "Inserisci le dimensioni e clicca su Calcola",
     },
+
     results: {
-      materials_needed: "Materiali Necessari",
-      total_cost: "Costo Stimato (€)",
-      volume_m3: "Volume (M³)",
+      calculating_needs: "Calcolo delle esigenze del progetto...",
+      calculation_error: "Errore di Calcolo",
+      ready_to_calc: "Pronto a Costruire!",
+      get_started:
+        "Seleziona un progetto e inserisci le dimensioni per iniziare!",
+      perfect_for: "Perfetto per:",
+      success: "Esigenze del Tuo Progetto",
+      needs_subtitle: "Ecco cosa ti servirà per questo progetto",
+      important_notes: "Considerazioni Importanti",
+      shopping_list: "Lista della Spesa",
+      round_up: "Arrotonda per eccesso quando acquisti",
+      print_list: "Stampa Lista",
+      copy_list: "Copia Lista",
+      next_steps: "Prossimi Passi",
+      step_1: "Acquista i materiali dalla tua lista",
+      step_2:
+        "Controlla i codici edilizi locali e ottieni i permessi se necessario",
+      step_3:
+        "Raccogli strumenti e attrezzature di sicurezza prima di iniziare",
     },
+
     units: {
       meters: "m",
       pieces: "pz",
       m3: "m³",
     },
+
     tips: {
       title: "Consigli Veloci Prima di Costruire",
       local_codes:
@@ -94,13 +122,30 @@ export const it = {
       seasonal_pricing:
         "I prezzi dei materiali possono cambiare stagionalmente; verifica le tariffe all'ingrosso dei fornitori locali.",
       material_waste:
-        "Ordina il 10-15% di materiale in più per tenere conto di sprechi ed errori (Roma non è stata costruita in un giorno!).", // Idiom: Rome wasn't built in a day (Great things take time/Caution)
+        "Ordina il 10-15% di materiale in più per tenere conto di sprechi ed errori (Roma non è stata costruita in un giorno!).",
     },
+
+    info_cards: {
+      tips: {
+        title: "Consigli da Pro",
+        item_1: "Controlla sempre i codici edilizi locali prima di iniziare",
+        item_2: "Aggiungi il 10-15% in più per lo spreco di materiale",
+        item_3: "Considera le variazioni di prezzo stagionali",
+      },
+      common_uses: "Usi Comuni",
+      safety: {
+        title: "Sicurezza Prima di Tutto",
+        text: "Questi calcoli sono stime. Per progetti strutturali o permessi, consulta un professionista autorizzato.",
+      },
+    },
+
     visualization: {
       title: "Visualizzazione 3D",
-      not_available:
-        "La visualizzazione 3D è disponibile solo per calcoli strutturali come Deck e Solette.",
+      rotate_zoom: "Ruota e ingrandisci per ispezionare le dimensioni.",
+      unavailable_item: "Anteprima 3D non disponibile per questo elemento.",
+      not_available: "Nessuna visualizzazione disponibile",
     },
+
     loading: "Calcolo in corso...",
     no_results:
       "Inserisci le tue dimensioni e clicca su 'Calcola' per vedere i risultati.",
@@ -139,6 +184,155 @@ export const it = {
       twitter: "Twitter",
       github: "GitHub",
       linkedin: "LinkedIn",
+    },
+  },
+  contractor: {
+    title: "Strumenti Professionali per Appaltatori",
+    subtitle: "Offerte precise. Stime rapide. Gestione efficiente.",
+    header: {
+      badge: "Suite Professionale",
+    },
+    categories: {
+      bidding: "Gare d'appalto",
+      scheduling: "Pianificazione",
+      estimation: "Stima dei Costi",
+      management: "Gestione Cantiere",
+    },
+    form: {
+      title: "Parametri di Progetto",
+      select_calc: "Seleziona Calcolatore",
+      choose_calc: "Scegli un calcolatore...",
+      calculate: "Calcola",
+      calculating: "Elaborazione...",
+      output_format: "Formato Output",
+    },
+    formats: {
+      standard: "Standard",
+      detailed: "Dettagliato",
+      summary: "Riepilogo",
+    },
+    sections: {
+      dimensions: "Dimensioni",
+      material: "Proprietà Materiali",
+      resources: "Requisiti Risorse",
+      safety_factors: "Fattori di Sicurezza",
+      additional: "Parametri Aggiuntivi",
+      project_info: "Info Progetto",
+    },
+    results: {
+      calculating: "Elaborazione calcoli...",
+      error_title: "Errore di Calcolo",
+      ready_title: "Pronto al Calcolo",
+      ready_desc: "Inserisci i parametri per generare stime.",
+      critical: "Parametri Critici",
+      calculated: "Risultati Calcolati",
+    },
+    analysis: {
+      title: "Analisi Progetto",
+      cost: "Costo Totale",
+      duration: "Durata",
+      risk: "Livello di Rischio",
+      compliance: "Conformità",
+    },
+    meta: {
+      codes: "Codici Applicabili",
+      complexity: "Complessità",
+      certification_required: "Certificazione Richiesta",
+      certification_desc:
+        "Revisione certificazione professionale richiesta prima dell'esecuzione.",
+    },
+    actions: {
+      print: "Stampa",
+      export: "Esporta CSV",
+    },
+  },
+  engineer: {
+    // Header Section
+    badge: "Analisi Ingegneristica Avanzata",
+    title: "Calcolatrici Strutturali e dei Materiali",
+    subtitle:
+      "Strumenti di precisione per l'integrità strutturale, la scienza dei materiali e la pianificazione civile.",
+    ready_to_calc: "Iniziamo!",
+
+    // Output Format Selector
+    output_format: {
+      standard: "Output Standard",
+      detailed: "Analisi Dettagliata",
+      summary: "Rapporto Riepilogativo",
+    },
+
+    // Category Names
+    categories: {
+      civil: "Civile",
+      structural: "Strutturale",
+      mechanical: "Meccanica",
+      production: "Produzione",
+    },
+
+    // Form Section
+    form: {
+      title: "Parametri di Input",
+      select_calculator: "Seleziona Calcolatrice",
+      choose_calculator: "Scegli una calcolatrice...",
+      select_placeholder: "Seleziona...",
+      design_code: "Codice di Progettazione",
+      select_design_code: "Seleziona Codice di Progettazione",
+      calculating: "Calcolo in corso...",
+      calculate: "Calcola",
+      required_fields: "I campi obbligatori devono essere compilati",
+
+      sections: {
+        dimensions: "Dimensioni",
+        material: "Proprietà dei Materiali",
+        loads: "Casi di Carico",
+        safety_factors: "Fattori di Sicurezza",
+        additional: "Parametri Aggiuntivi",
+      },
+    },
+
+    // Results Section
+    results: {
+      // Loading & Error States
+      loading_analysis: "Analisi della Struttura...",
+      running_analysis: "Esecuzione dell'analisi strutturale...",
+      calculation_error: "Errore di Calcolo",
+
+      // Empty State
+      ready_to_calc: "Pronto per Calcolare",
+      input_prompt:
+        "Inserisci i parametri e fai clic su Calcola per generare le specifiche tecniche.",
+      typical_applications: "Applicazioni Tipiche:",
+
+      // Results Display
+      critical_parameters: "Parametri Critici di Progettazione",
+      compliance_title: "Analisi di Progettazione e Conformità",
+      recommendations_title: "Raccomandazioni",
+      calculated_results: "Risultati Calcolati",
+      data_analysis: "Analisi dei Dati",
+
+      // Actions
+      print_spec: "Stampa Spec.",
+      export_csv: "Esporta CSV",
+
+      // Warning Severity Levels
+      severity: {
+        critical: "Problema di Sicurezza Critico",
+        high: "Avviso ad Alta Priorità",
+        medium: "Avviso Consultivo",
+        low: "Informativo",
+      },
+    },
+
+    // Visualization Section
+    visualization: {
+      title: "Visualizzazione 3D",
+      unavailable:
+        "Anteprima 3D non disponibile per questo calcolo selezionato.",
+      panel_title: "Visualizzazione del Progetto",
+      preview_subtitle: "Anteprima 3D delle dimensioni del progetto",
+      area: "Area",
+      volume: "Volume",
+      material: "Materiale",
     },
   },
 };

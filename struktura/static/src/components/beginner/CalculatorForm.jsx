@@ -64,7 +64,8 @@ const BeginnerForm = ({
         />
         {range[0] !== 0.1 && (
           <p className="text-xs text-charcoal-400 dark:text-steel-600">
-            Typical: {range[0]} - {range[1]} m
+            {t?.beginner?.form?.typical_range || "Typical"}: {range[0]} -{" "}
+            {range[1]} m
           </p>
         )}
       </div>
@@ -84,7 +85,9 @@ const BeginnerForm = ({
           className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white focus:ring-green-500 focus:border-green-500"
           disabled={calculators.length === 0}
         >
-          <option value="">Choose a project...</option>
+          <option value="">
+            {t?.beginner?.form?.choose_project || "Choose a project..."}
+          </option>
           {calculators.map((calc) => (
             <option key={calc.value} value={calc.value}>
               {calc.label}
@@ -133,7 +136,7 @@ const BeginnerForm = ({
         {isLoading ? (
           <>
             <Icon name="Loader2" size={20} className="animate-spin" />
-            Calculating...
+            {t?.beginner?.form?.calculating || "Calculating..."}
           </>
         ) : (
           <>

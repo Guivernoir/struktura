@@ -17,6 +17,11 @@ const ContractorResults = ({
   theme,
   calculatorMetadata,
 }) => {
+  // Helper to safely access nested translations
+  const getT = (path, fallback) => {
+    return path.split(".").reduce((obj, k) => obj && obj[k], t) || fallback;
+  };
+
   const getLabel = (key) => {
     return (
       key
@@ -130,9 +135,11 @@ const ContractorResults = ({
           size={32}
           className="animate-spin inline-block mb-4"
         />
-        <p className="font-medium">{getLabel("contractor.loading_analysis")}</p>
-        <p className="text-xs mt-2 text-charcoal-400 dark:text-steel-600">
-          Processing contracting calculations...
+        <p className="font-medium">
+          {getT(
+            "contractor.results.calculating",
+            "Processing contracting calculations..."
+          )}
         </p>
       </div>
     );
@@ -143,7 +150,9 @@ const ContractorResults = ({
       <div className="p-6 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 flex items-center gap-3">
         <Icon name="AlertCircle" size={24} className="flex-shrink-0" />
         <div className="flex-1">
-          <h3 className="font-bold">Calculation Error</h3>
+          <h3 className="font-bold">
+            {getT("contractor.results.error_title", "Calculation Error")}
+          </h3>
           <p className="text-sm mt-1">{error}</p>
         </div>
       </div>
@@ -159,33 +168,18 @@ const ContractorResults = ({
           className="inline-block mb-4 opacity-50"
         />
         <h3 className="text-lg font-semibold">
-          {getLabel("contractor.ready_to_calc")}
+          {getT("contractor.results.ready_title", "Ready to Calculate")}
         </h3>
         <p className="text-sm mt-2">
-          Input parameters and click Calculate to generate contracting
-          estimates.
+          {getT(
+            "contractor.results.ready_desc",
+            "Input parameters to generate estimates."
+          )}
         </p>
-
-        {calculatorMetadata && calculatorMetadata.typical_applications && (
-          <div className="mt-6 text-left max-w-md mx-auto">
-            <h4 className="text-xs font-semibold text-charcoal-500 dark:text-steel-500 uppercase tracking-wider mb-2">
-              Typical Applications:
-            </h4>
-            <ul className="space-y-1 text-xs text-charcoal-500 dark:text-steel-500">
-              {calculatorMetadata.typical_applications.map((app, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-amber-500 mt-0.5">▸</span>
-                  <span>{app}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
     );
   }
 
-  // Separate critical and non-critical results
   const criticalResults = results.filter((r) => r && r.is_critical === true);
   const standardResults = results.filter((r) => r && r.is_critical !== true);
 
@@ -196,12 +190,12 @@ const ContractorResults = ({
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl border-2 border-amber-300 dark:border-amber-700 p-6">
           <h3 className="text-sm font-bold text-amber-900 dark:text-amber-100 uppercase tracking-wide mb-4 flex items-center gap-2">
             <Icon name="TrendingUp" size={18} className="text-amber-600" />
-            Project Analysis
+            {getT("contractor.analysis.title", "Project Analysis")}
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/60 dark:bg-charcoal-900/60 rounded-lg p-3">
               <div className="text-xs text-charcoal-500 dark:text-steel-500 mb-1">
-                Total Cost
+                {getT("contractor.analysis.cost", "Total Cost")}
               </div>
               <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
                 ${analysis.total_cost?.toLocaleString()}
@@ -209,7 +203,7 @@ const ContractorResults = ({
             </div>
             <div className="bg-white/60 dark:bg-charcoal-900/60 rounded-lg p-3">
               <div className="text-xs text-charcoal-500 dark:text-steel-500 mb-1">
-                Duration
+                {getT("contractor.analysis.duration", "Duration")}
               </div>
               <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
                 {analysis.total_duration} days
@@ -217,7 +211,7 @@ const ContractorResults = ({
             </div>
             <div className="bg-white/60 dark:bg-charcoal-900/60 rounded-lg p-3">
               <div className="text-xs text-charcoal-500 dark:text-steel-500 mb-1">
-                Risk Level
+                {getT("contractor.analysis.risk", "Risk Level")}
               </div>
               <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
                 {(analysis.risk_level * 100).toFixed(0)}%
@@ -225,7 +219,7 @@ const ContractorResults = ({
             </div>
             <div className="bg-white/60 dark:bg-charcoal-900/60 rounded-lg p-3">
               <div className="text-xs text-charcoal-500 dark:text-steel-500 mb-1">
-                Compliance
+                {getT("contractor.analysis.compliance", "Compliance")}
               </div>
               <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
                 {(analysis.compliance_score * 100).toFixed(0)}%
@@ -245,7 +239,7 @@ const ContractorResults = ({
               className="text-red-600 dark:text-red-400"
             />
             <h3 className="text-sm font-bold text-red-900 dark:text-red-100 uppercase tracking-wide">
-              Critical Parameters
+              {getT("contractor.results.critical", "Critical Parameters")}
             </h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -356,20 +350,16 @@ const ContractorResults = ({
         <div>
           <h3 className="text-sm font-semibold text-charcoal-700 dark:text-steel-300 mb-3 uppercase tracking-wide flex items-center gap-2">
             <Icon name="Calculator" size={16} />
-            Calculated Results
+            {getT("contractor.results.calculated", "Calculated Results")}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* ... Results Mapping ... */}
             {standardResults.map((result, index) => (
               <ResultCard
                 key={index}
-                label={result.label}
-                value={result.value}
-                unit={result.unit}
-                formatted={result.formatted_value}
-                tolerance={
-                  result.tolerance ? (result.tolerance * 100).toFixed(1) : null
-                }
-                isCritical={false}
+                {...result}
+                // Note: result.label usually comes from backend.
+                // Ideally backend sends translation keys, or we display as is.
               />
             ))}
           </div>
@@ -403,7 +393,7 @@ const ContractorResults = ({
             onClick={() => window.print()}
           >
             <Icon name="Printer" size={16} />
-            Print
+            {getT("contractor.actions.print", "Print")}
           </button>
           <button
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors"
@@ -422,7 +412,7 @@ const ContractorResults = ({
             }}
           >
             <Icon name="Download" size={16} />
-            Export
+            {getT("contractor.actions.export", "Export")}
           </button>
         </div>
       </div>

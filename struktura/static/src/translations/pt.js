@@ -51,13 +51,19 @@ export const pt = {
     },
   },
   beginner: {
+    badge: "Projetos DIY e Casa",
     title: "Cantinho do Hobbista: Vamos Começar?",
+    subtitle:
+      "Listas de materiais e orçamento. Construa sem o bicho-papão da matemática.",
+    note_label: "Nota",
+
     categories: {
       outdoors: "Áreas Externas e Estruturas",
       interiors: "Interiores e Acabamentos",
       utilities: "Ferramentas e Utilidades",
       garden: "Jardinagem e Paisagismo",
     },
+
     calcs: {
       deck: "Materiais para Deck de Madeira",
       fence: "Contagem de Postes para Cerca",
@@ -69,24 +75,43 @@ export const pt = {
       planter_box: "Madeira e Terra para Vaso/Canteiro",
       soil_volume: "Volume de Terra (M³)",
     },
+
     form: {
       title: "Dimensões do Seu Projeto",
-      calculation_type: "O que você está construindo?",
-      width: "Largura",
-      length: "Comprimento",
-      height: "Altura",
-      calculate_btn: "Calcular Materiais",
+      select_project: "O que você está construindo?",
+      choose_project: "Escolha um projeto...",
+      dimensions: "Dimensões",
+      typical_range: "Típico",
+      calculating: "Calculando...",
+      calculate: "Calcular Materiais",
+      help_text: "Digite as dimensões e clique em Calcular",
     },
+
     results: {
-      materials_needed: "Materiais Necessários",
-      total_cost: "Custo Estimado (R$)",
-      volume_m3: "Volume (M³)",
+      calculating_needs: "Calculando necessidades do projeto...",
+      calculation_error: "Erro de Cálculo",
+      ready_to_calc: "Pronto para Construir!",
+      get_started: "Selecione um projeto e digite as dimensões para começar!",
+      perfect_for: "Perfeito para:",
+      success: "Necessidades do Seu Projeto",
+      needs_subtitle: "Aqui está o que você vai precisar para este projeto",
+      important_notes: "Considerações Importantes",
+      shopping_list: "Lista de Compras",
+      round_up: "Arredonde para cima ao comprar",
+      print_list: "Imprimir Lista",
+      copy_list: "Copiar Lista",
+      next_steps: "Próximos Passos",
+      step_1: "Compre os materiais da sua lista",
+      step_2: "Verifique as normas locais e obtenha licenças se necessário",
+      step_3: "Reúna ferramentas e equipamentos de segurança antes de começar",
     },
+
     units: {
       meters: "m",
       pieces: "un",
       m3: "m³",
     },
+
     tips: {
       title: "Dicas de Mestre Antes de Começar",
       local_codes:
@@ -94,13 +119,30 @@ export const pt = {
       seasonal_pricing:
         "Preços de material podem mudar com a estação; confira ofertas para grandes volumes.",
       material_waste:
-        "Peça 10-15% a mais de material para cobrir desperdício (é melhor sobrar do que faltar!).", // Idiom for better safe than sorry
+        "Peça 10-15% a mais de material para cobrir desperdício (é melhor sobrar do que faltar!).",
     },
+
+    info_cards: {
+      tips: {
+        title: "Dicas Profissionais",
+        item_1: "Sempre verifique as normas locais antes de começar",
+        item_2: "Adicione 10-15% extra para desperdício de material",
+        item_3: "Considere variações de preço sazonais",
+      },
+      common_uses: "Usos Comuns",
+      safety: {
+        title: "Segurança em Primeiro Lugar",
+        text: "Estes cálculos são estimativas. Para projetos estruturais ou licenças, consulte um profissional licenciado.",
+      },
+    },
+
     visualization: {
       title: "Visualização 3D",
-      not_available:
-        "A visualização 3D está disponível apenas para cálculos estruturais, como Decks e Lajes.",
+      rotate_zoom: "Gire e amplie para inspecionar as dimensões.",
+      unavailable_item: "Visualização 3D indisponível para este item.",
+      not_available: "Visualização não disponível",
     },
+
     loading: "Calculando...",
     no_results:
       "Digite as dimensões e clique em 'Calcular' para ver os resultados.",
@@ -139,6 +181,142 @@ export const pt = {
       twitter: "Twitter",
       github: "GitHub",
       linkedin: "LinkedIn",
+    },
+  },
+  contractor: {
+    title: "Ferramentas Profissionais de Empreitada",
+    subtitle: "Orçamentos precisos. Estimativas rápidas. Gestão eficiente.",
+    header: {
+      badge: "Suite Profissional",
+    },
+    categories: {
+      bidding: "Licitações",
+      scheduling: "Cronograma",
+      estimation: "Estimativa de Custos",
+      management: "Gestão de Obra",
+    },
+    form: {
+      title: "Parâmetros do Projeto",
+      select_calc: "Selecionar Calculadora",
+      choose_calc: "Escolha uma calculadora...",
+      calculate: "Calcular",
+      calculating: "Processando...",
+      output_format: "Formato de Saída",
+    },
+    formats: {
+      standard: "Padrão",
+      detailed: "Detalhado",
+      summary: "Resumo",
+    },
+    sections: {
+      dimensions: "Dimensões",
+      material: "Propriedades do Material",
+      resources: "Requisitos de Recursos",
+      safety_factors: "Fatores de Segurança",
+      additional: "Parâmetros Adicionais",
+      project_info: "Informações do Projeto",
+    },
+    results: {
+      calculating: "Processando cálculos...",
+      error_title: "Erro de Cálculo",
+      ready_title: "Pronto para Calcular",
+      ready_desc:
+        "Insira os parâmetros e clique em Calcular para gerar estimativas.",
+      critical: "Parâmetros Críticos",
+      calculated: "Resultados Calculados",
+    },
+    analysis: {
+      title: "Análise do Projeto",
+      cost: "Custo Total",
+      duration: "Duração",
+      risk: "Nível de Risco",
+      compliance: "Conformidade",
+    },
+    meta: {
+      codes: "Códigos Aplicáveis",
+      complexity: "Complexidade",
+      certification_required: "Certificação Necessária",
+      certification_desc:
+        "Revisão de certificação profissional necessária antes da execução.",
+    },
+    actions: {
+      print: "Imprimir",
+      export: "Exportar CSV",
+    },
+  },
+  engineer: {
+    badge: "Análise de Engenharia Avançada",
+    title: "Calculadoras Estruturais e de Materiais",
+    subtitle:
+      "Ferramentas de precisão para integridade estrutural, ciência de materiais e planejamento civil.",
+    ready_to_calc: "Vamos Calcular!",
+
+    output_format: {
+      standard: "Saída Padrão",
+      detailed: "Análise Detalhada",
+      summary: "Relatório Resumido",
+    },
+
+    categories: {
+      civil: "Civil",
+      structural: "Estrutural",
+      mechanical: "Mecânica",
+      production: "Produção",
+    },
+
+    form: {
+      title: "Parâmetros de Entrada",
+      select_calculator: "Selecionar Calculadora",
+      choose_calculator: "Escolha uma calculadora...",
+      select_placeholder: "Selecione...",
+      design_code: "Código de Projeto",
+      select_design_code: "Selecione o Código de Projeto",
+      calculating: "Calculando...",
+      calculate: "Calcular",
+      required_fields: "Campos obrigatórios devem ser preenchidos",
+
+      sections: {
+        dimensions: "Dimensões",
+        material: "Propriedades do Material",
+        loads: "Casos de Carga",
+        safety_factors: "Fatores de Segurança",
+        additional: "Parâmetros Adicionais",
+      },
+    },
+
+    results: {
+      loading_analysis: "Analisando Estrutura...",
+      running_analysis: "Executando análise estrutural...",
+      calculation_error: "Erro de Cálculo",
+      ready_to_calc: "Pronto para Calcular",
+      input_prompt:
+        "Digite os parâmetros e clique em Calcular para gerar especificações técnicas.",
+      typical_applications: "Aplicações Típicas:",
+      critical_parameters: "Parâmetros Críticos de Projeto",
+      compliance_title: "Análise de Projeto e Conformidade",
+      recommendations_title: "Recomendações",
+      calculated_results: "Resultados Calculados",
+      data_analysis: "Análise de Dados",
+      print_spec: "Imprimir Especificação",
+      export_csv: "Exportar CSV",
+
+      severity: {
+        critical: "Problema Crítico de Segurança",
+        high: "Aviso de Alta Prioridade",
+        medium: "Aviso Consultivo",
+        low: "Informativo",
+      },
+    },
+
+    visualization: {
+      title: "Visualização 3D",
+      unavailable:
+        "Visualização 3D indisponível para este cálculo selecionado.",
+      panel_title: "Visualização do Projeto",
+      preview_subtitle: "Visualização 3D das dimensões do projeto",
+      area: "Área",
+      volume: "Volume",
+      material: "Material",
     },
   },
 };

@@ -10,7 +10,7 @@ import {
   Cell,
 } from "recharts";
 
-const ChartsView = ({ results, theme }) => {
+const ChartsView = ({ results, theme, t }) => {
   // 1. Filter only numeric results for charting
   const chartData = results
     .filter((r) => !isNaN(parseFloat(r.value)))
@@ -31,7 +31,7 @@ const ChartsView = ({ results, theme }) => {
   return (
     <div className="h-[300px] w-full mt-6">
       <h4 className="text-sm font-semibold text-charcoal-500 dark:text-steel-400 mb-4 uppercase tracking-wider">
-        Data Analysis
+        {t?.engineer?.results?.data_analysis || "Data Analysis"}
       </h4>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart

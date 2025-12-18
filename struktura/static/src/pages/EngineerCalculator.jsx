@@ -81,17 +81,16 @@ const EngineerCalculator = () => {
       <div className="mb-12 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-100 to-rose-100 dark:from-red-950/50 dark:to-rose-950/50 rounded-full mb-6 border border-red-200 dark:border-red-800">
           <span className="text-xs font-bold text-red-900 dark:text-red-100 uppercase tracking-wider">
-            Advanced Engineering Analysis
+            {getLabel("engineer.badge")}
           </span>
         </div>
 
         <h1 className="font-display text-5xl md:text-6xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-rose-600 dark:from-red-400 dark:to-rose-400">
-          {getLabel("engineer.title") || "Structural & Material Calculators"}
+          {getLabel("engineer.title")}
         </h1>
 
         <p className="text-lg text-charcoal-600 dark:text-steel-400 max-w-3xl mx-auto leading-relaxed">
-          {getLabel("engineer.subtitle") ||
-            "Precision tools for structural integrity, materials science, and civil planning."}
+          {getLabel("engineer.subtitle")}
         </p>
       </div>
 
@@ -104,7 +103,7 @@ const EngineerCalculator = () => {
           setSelectedCategory={setSelectedCategory}
         />
 
-        {/* Output Format Selector (Moved from sticky header) */}
+        {/* Output Format Selector */}
         {selectedCalculator && (
           <div className="mt-4 flex items-center gap-2 bg-white dark:bg-charcoal-900 rounded-lg px-3 py-2 shadow-sm border border-sand-200 dark:border-charcoal-800">
             <Icon
@@ -117,21 +116,27 @@ const EngineerCalculator = () => {
               onChange={(e) => setOutputFormat(e.target.value)}
               className="text-sm font-medium text-charcoal-800 dark:text-steel-200 bg-transparent border-none focus:outline-none"
             >
-              <option value="standard">Standard Output</option>
-              <option value="detailed">Detailed Analysis</option>
-              <option value="summary">Summary Report</option>
+              <option value="standard">
+                {getLabel("engineer.output_format.standard")}
+              </option>
+              <option value="detailed">
+                {getLabel("engineer.output_format.detailed")}
+              </option>
+              <option value="summary">
+                {getLabel("engineer.output_format.summary")}
+              </option>
             </select>
           </div>
         )}
       </div>
 
-      {/* Main Content Grid - Standard 2-column layout */}
+      {/* Main Content Grid */}
       <div className={`grid lg:grid-cols-2 gap-8`}>
         {/* Left Column: Form */}
         <div className="lg:col-span-1">
           <div className="bg-white dark:bg-charcoal-900 rounded-2xl shadow-xl border border-sand-200 dark:border-charcoal-800 p-6 sticky top-24">
             <h2 className="text-xl font-semibold text-charcoal-900 dark:text-white mb-6">
-              {getLabel("engineer.form.title") || "Input Parameters"}
+              {getLabel("engineer.form.title")}
             </h2>
 
             <CalculatorForm
@@ -157,7 +162,7 @@ const EngineerCalculator = () => {
                   className="text-charcoal-400 dark:text-steel-500"
                 />
                 <span className="text-xs text-charcoal-500 dark:text-steel-400">
-                  3D preview unavailable for this selected calculation.
+                  {getLabel("engineer.visualization.unavailable")}
                 </span>
               </div>
             )}
@@ -166,11 +171,11 @@ const EngineerCalculator = () => {
 
         {/* Right Column: Results & Visualization */}
         <div className="lg:col-span-1 space-y-8">
-          {/* 3D Visualization Panel (if supported and a calculator is selected) */}
+          {/* 3D Visualization Panel */}
           {show3D && selectedCalculator && (
             <div className="bg-white dark:bg-charcoal-900 rounded-2xl shadow-xl border border-sand-200 dark:border-charcoal-800 p-6">
               <h2 className="text-xl font-semibold text-charcoal-900 dark:text-white mb-4">
-                3D Visualization
+                {getLabel("engineer.visualization.title")}
               </h2>
               <VisualizationPanel t={t} formData={formData} theme={theme} />
             </div>
@@ -191,7 +196,7 @@ const EngineerCalculator = () => {
         </div>
       </div>
 
-      {/* Disclaimer Footer (Re-added to the bottom) */}
+      {/* Disclaimer Footer */}
       <div className="mt-12">
         <Disclaimer t={t} />
       </div>

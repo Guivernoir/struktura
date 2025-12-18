@@ -31,7 +31,8 @@ const BeginnerResults = ({
         />
         <p className="font-medium">{getLabel("beginner.loading")}</p>
         <p className="text-xs mt-2 text-charcoal-400 dark:text-steel-600">
-          Calculating your project needs...
+          {t?.beginner?.results?.calculating_needs ||
+            "Calculating your project needs..."}
         </p>
       </div>
     );
@@ -42,7 +43,9 @@ const BeginnerResults = ({
       <div className="p-6 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 flex items-center gap-3">
         <Icon name="AlertCircle" size={24} className="flex-shrink-0" />
         <div className="flex-1">
-          <h3 className="font-bold">Calculation Error</h3>
+          <h3 className="font-bold">
+            {t?.beginner?.results?.calculation_error || "Calculation Error"}
+          </h3>
           <p className="text-sm mt-1">{error}</p>
         </div>
       </div>
@@ -61,13 +64,14 @@ const BeginnerResults = ({
           {getLabel("beginner.ready_to_calc")}
         </h3>
         <p className="text-sm mt-2">
-          Select a project and enter dimensions to get started!
+          {t?.beginner?.results?.get_started ||
+            "Select a project and enter dimensions to get started!"}
         </p>
 
         {calculatorMetadata && calculatorMetadata.typical_applications && (
           <div className="mt-6 text-left max-w-md mx-auto">
             <h4 className="text-xs font-semibold text-charcoal-500 dark:text-steel-500 uppercase tracking-wider mb-2">
-              Perfect for:
+              {t?.beginner?.results?.perfect_for || "Perfect for:"}
             </h4>
             <ul className="space-y-1 text-xs text-charcoal-500 dark:text-steel-500">
               {calculatorMetadata.typical_applications.map((app, idx) => (
@@ -96,7 +100,8 @@ const BeginnerResults = ({
               {getLabel("beginner.results.success") || "Your Project Needs"}
             </h3>
             <p className="text-sm text-green-700 dark:text-green-300">
-              Here's what you'll need for this project
+              {t?.beginner?.results?.needs_subtitle ||
+                "Here's what you'll need for this project"}
             </p>
           </div>
         </div>
@@ -179,7 +184,8 @@ const BeginnerResults = ({
                     {result.label}
                   </div>
                   <div className="text-xs text-charcoal-500 dark:text-steel-500">
-                    Round up when purchasing
+                    {t?.beginner?.results?.round_up ||
+                      "Round up when purchasing"}
                   </div>
                 </div>
               </div>
@@ -206,7 +212,7 @@ const BeginnerResults = ({
             onClick={() => window.print()}
           >
             <Icon name="Printer" size={16} />
-            Print List
+            {t?.beginner?.results?.print_list || "Print List"}
           </button>
           <button
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
@@ -219,7 +225,7 @@ const BeginnerResults = ({
             }}
           >
             <Icon name="Copy" size={16} />
-            Copy List
+            {t?.beginner?.results?.copy_list || "Copy List"}
           </button>
         </div>
       </div>
@@ -235,19 +241,28 @@ const BeginnerResults = ({
             <span className="flex-shrink-0 w-6 h-6 bg-blue-600 dark:bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
               1
             </span>
-            <span>Purchase materials from your shopping list</span>
+            <span>
+              {t?.beginner?.results?.step_1 ||
+                "Purchase materials from your shopping list"}
+            </span>
           </li>
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-6 h-6 bg-blue-600 dark:bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
               2
             </span>
-            <span>Check local building codes and get permits if needed</span>
+            <span>
+              {t?.beginner?.results?.step_2 ||
+                "Check local building codes and get permits if needed"}
+            </span>
           </li>
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-6 h-6 bg-blue-600 dark:bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
               3
             </span>
-            <span>Gather tools and safety equipment before starting</span>
+            <span>
+              {t?.beginner?.results?.step_3 ||
+                "Gather tools and safety equipment before starting"}
+            </span>
           </li>
         </ol>
       </div>

@@ -37,7 +37,8 @@ const EngineerResults = ({
         borderClass: "border-red-500",
         textClass: "text-red-900 dark:text-red-100",
         iconClass: "text-red-600 dark:text-red-500",
-        label: "Critical Safety Issue",
+        label:
+          t?.engineer?.results?.severity?.critical || "Critical Safety Issue",
       },
       [WarningSeverity.HIGH]: {
         icon: "AlertCircle",
@@ -45,7 +46,7 @@ const EngineerResults = ({
         borderClass: "border-orange-500",
         textClass: "text-orange-900 dark:text-orange-100",
         iconClass: "text-orange-600 dark:text-orange-500",
-        label: "High Priority Warning",
+        label: t?.engineer?.results?.severity?.high || "High Priority Warning",
       },
       [WarningSeverity.MEDIUM]: {
         icon: "Info",
@@ -53,7 +54,7 @@ const EngineerResults = ({
         borderClass: "border-yellow-500",
         textClass: "text-yellow-900 dark:text-yellow-100",
         iconClass: "text-yellow-600 dark:text-yellow-500",
-        label: "Advisory Notice",
+        label: t?.engineer?.results?.severity?.medium || "Advisory Notice",
       },
       [WarningSeverity.LOW]: {
         icon: "MessageSquare",
@@ -61,7 +62,7 @@ const EngineerResults = ({
         borderClass: "border-blue-500",
         textClass: "text-blue-900 dark:text-blue-100",
         iconClass: "text-blue-600 dark:text-blue-500",
-        label: "Informational",
+        label: t?.engineer?.results?.severity?.low || "Informational",
       },
     };
 
@@ -128,7 +129,8 @@ const EngineerResults = ({
         />
         <p className="font-medium">{getLabel("engineer.loading_analysis")}</p>
         <p className="text-xs mt-2 text-charcoal-400 dark:text-steel-600">
-          Running structural analysis...
+          {t?.engineer?.results?.running_analysis ||
+            "Running structural analysis..."}
         </p>
       </div>
     );
@@ -139,7 +141,9 @@ const EngineerResults = ({
       <div className="p-6 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 flex items-center gap-3">
         <Icon name="AlertCircle" size={24} className="flex-shrink-0" />
         <div className="flex-1">
-          <h3 className="font-bold">Calculation Error</h3>
+          <h3 className="font-bold">
+            {t?.engineer?.results?.calculation_error || "Calculation Error"}
+          </h3>
           <p className="text-sm mt-1">{error}</p>
         </div>
       </div>
@@ -158,14 +162,15 @@ const EngineerResults = ({
           {getLabel("engineer.ready_to_calc")}
         </h3>
         <p className="text-sm mt-2">
-          Input parameters and click Calculate to generate technical
-          specifications.
+          {t?.engineer?.results?.input_prompt ||
+            "Input parameters and click Calculate to generate technical specifications."}
         </p>
 
         {calculatorMetadata && calculatorMetadata.typical_applications && (
           <div className="mt-6 text-left max-w-md mx-auto">
             <h4 className="text-xs font-semibold text-charcoal-500 dark:text-steel-500 uppercase tracking-wider mb-2">
-              Typical Applications:
+              {t?.engineer?.results?.typical_applications ||
+                "Typical Applications:"}
             </h4>
             <ul className="space-y-1 text-xs text-charcoal-500 dark:text-steel-500">
               {calculatorMetadata.typical_applications.map((app, idx) => (
@@ -197,7 +202,8 @@ const EngineerResults = ({
               className="text-red-600 dark:text-red-400"
             />
             <h3 className="text-sm font-bold text-red-900 dark:text-red-100 uppercase tracking-wide">
-              Critical Design Parameters
+              {t?.engineer?.results?.critical_parameters ||
+                "Critical Design Parameters"}
             </h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -227,7 +233,8 @@ const EngineerResults = ({
       {structuredWarnings && (
         <div className="bg-white dark:bg-charcoal-900 rounded-2xl shadow-lg border border-sand-200 dark:border-charcoal-800 p-6 space-y-4">
           <h3 className="text-xl font-semibold text-charcoal-900 dark:text-white mb-2">
-            Design & Compliance Analysis
+            {t?.engineer?.results?.compliance_title ||
+              "Design & Compliance Analysis"}
           </h3>
           {renderStructuredWarnings()}
         </div>
@@ -237,7 +244,7 @@ const EngineerResults = ({
       {recommendations && recommendations.length > 0 && (
         <div className="bg-white dark:bg-charcoal-900 rounded-2xl shadow-lg border border-sand-200 dark:border-charcoal-800 p-6 space-y-4">
           <h3 className="text-xl font-semibold text-charcoal-900 dark:text-white">
-            Recommendations
+            {t?.engineer?.results?.recommendations_title || "Recommendations"}
           </h3>
           <ul className="space-y-3 text-sm text-charcoal-700 dark:text-steel-300">
             {recommendations.map((rec, index) => (
@@ -261,7 +268,8 @@ const EngineerResults = ({
             // UPDATED: Standard results header text color to Red/Rose accent
             className="text-sm font-semibold text-red-600 dark:text-rose-400 mb-3 uppercase tracking-wide flex items-center gap-2"
           >
-            <Icon name="Calculator" size={16} /> Calculated Results
+            <Icon name="Calculator" size={16} />{" "}
+            {t?.engineer?.results?.calculated_results || "Calculated Results"}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {standardResults.map((result, index) => {
@@ -285,7 +293,7 @@ const EngineerResults = ({
           </div>
 
           {/* Visualization Dashboard */}
-          <ChartsView results={results} theme={theme} />
+          <ChartsView results={results} theme={theme} t={t} />
 
           {/* Actions */}
           <div className="mt-8 pt-6 border-t border-sand-200 dark:border-charcoal-800 flex justify-end gap-3">
@@ -294,7 +302,7 @@ const EngineerResults = ({
               onClick={() => window.print()}
             >
               <Icon name="Printer" size={16} />
-              Print Spec
+              {t?.engineer?.results?.print_spec || "Print Spec"}
             </button>
             <button
               // UPDATED: Export button colors to Indigo accent
@@ -318,7 +326,7 @@ const EngineerResults = ({
               }}
             >
               <Icon name="Download" size={16} />
-              Export CSV
+              {t?.engineer?.results?.export_csv || "Export CSV"}
             </button>
           </div>
         </div>
