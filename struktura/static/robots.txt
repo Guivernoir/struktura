@@ -1,0 +1,19 @@
+User-agent: *
+# Allow the main entry point and sitemaps
+Allow: /
+Allow: /sitemap.xml
+
+# Allow static assets explicitly to ensure Google can render the page look
+Allow: /assets/
+Allow: /fonts/
+Allow: /favicon/
+
+# BLOCK the API. Search engines do not need to index raw JSON responses.
+# This prevents "soft 404" errors and crawl waste.
+Disallow: /api/
+
+# Block user-specific pages to protect privacy and prevent low-value indexing
+Disallow: /profile/
+Disallow: /stats/
+
+Sitemap: https://struktura.fly.dev/sitemap.xml

@@ -26,53 +26,18 @@ pub mod stats;
 pub mod sec;
 pub mod state;
 pub mod calculus;
+//pub mod pricing;
+pub mod seo;
 
 use sec::{
     Claims, SecurityConfig, TokenBlacklist, CsrfTokenStore, 
     security_headers_middleware, rate_limit_middleware, csrf_protection_middleware,
 };
 use state::{AppState, IpRateLimiter};
-
-#[derive(Deserialize)]
-struct LangQuery {
-    lang: Option<String>,
-}
+use seo::{index_handler, sitemap_handler};
 
 async fn health_check() -> axum::http::StatusCode {
     StatusCode::OK
-}
-
-async fn index_handler(Query(params): Query<LangQuery>) -> impl IntoResponse {
-    let raw_html = include_str!("../static/dist/index.html");
-    let lang = params.lang.as_deref().unwrap_or("en");
-
-    let title = match lang {
-        "pt" => "Struktura - Calculadora de Precisão e Estruturas",
-        "fr" => "Struktura - Calculateur de Précision Matériaux & Structure",
-        "es" => "Struktura - Calculadora de Precisión de Materiales",
-        "de" => "Struktura - Präzisionsberechnungen für Material & Struktur",
-        _ => "Struktura - Precision Material & Structural Calculator",
-    };
-
-    let desc = match lang {
-        "pt" => "Construa com Precisão. Desperdício Zero.",
-        "fr" => "Construire avec Précision. Zéro Déchet.",
-        "es" => "Construya con Precisión. Nada de Desperdicio.",
-        "de" => "Präzise Bauen. Nichts Verschwenden.",
-        _ => "Build With Precision. Waste Nothing.",
-    };
-
-    let modified_html = raw_html
-        .replace(
-            "<title>",
-            &format!("<title>{}", title),
-        )
-        .replace(
-            "content=\"Build With Precision. Waste Nothing.\"",
-            &format!("content=\"{}\"", desc),
-        );
-
-    Html(modified_html)
 }
 
 #[tokio::main]
@@ -164,6 +129,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/signup", post(auth::signup_handler))
         .route("/login", post(auth::login_handler))
         .route("/csrf", get(auth::get_csrf_token_handler))
+        .route("/sitemap.xml", get(sitemap_handler))
         .route("/health", get(|| async { StatusCode::OK }));
 
     let protected_routes = Router::new()
