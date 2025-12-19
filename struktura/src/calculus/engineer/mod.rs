@@ -104,6 +104,7 @@ pub mod test_utils {
             temperature: None,
             humidity: None,
             additional: None,
+            structured_data: None,
             project_metadata: None,
         }
     }
@@ -143,6 +144,7 @@ pub mod test_utils {
             temperature: None,
             humidity: None,
             additional: None,
+            structured_data: None,
             project_metadata: None,
         }
     }

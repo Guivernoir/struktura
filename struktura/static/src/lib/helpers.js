@@ -161,10 +161,12 @@ export const EngineeringHelpers = {
     temperature = null,
     humidity = null,
     additional = null,
+    structured_data = null,
     projectMetadata = null,
   }) => {
     const params = {
       dimensions: {},
+      structured_data: structured_data || {},
     };
 
     if (dimensions) {

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use serde_json::Value as JsonValue;
 
 // ============================================================================
 // ENUMS AND CONSTANTS
@@ -223,6 +224,7 @@ impl Default for SafetyFactors {
     }
 }
 
+
 /// Comprehensive engineering parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EngineeringParameters {
@@ -253,9 +255,38 @@ pub struct EngineeringParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub humidity: Option<f64>,
     
-    /// Additional calculator-specific parameters
+    /// Additional calculator-specific parameters (simple numeric values)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub additional: Option<HashMap<String, f64>>,
+    
+    // ======================================================================
+    // NEW FIELD - Complex structured data support
+    // ======================================================================
+    /// Complex structured data for calculators requiring arrays, nested objects,
+    /// timestamps, or other non-numeric data types.
+    /// 
+    /// Key-value pairs where values can be any valid JSON:
+    /// - Arrays: event lists, time series data
+    /// - Objects: nested structures, complex configurations  
+    /// - Strings: timestamps, categorical data
+    /// - Mixed types: whatever the calculator needs
+    /// 
+    /// Example for OEE calculator:
+    /// ```json
+    /// {
+    ///   "shift_data": {
+    ///     "start_time": "2025-12-18T06:00:00Z",
+    ///     "end_time": "2025-12-18T14:00:00Z",
+    ///     "planned_downtime": 30.0
+    ///   },
+    ///   "downtime_events": [...],
+    ///   "production_runs": [...],
+    ///   "quality_events": [...]
+    /// }
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub structured_data: Option<HashMap<String, JsonValue>>,
+    // ======================================================================
     
     /// Optional project metadata
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -459,6 +490,8 @@ pub enum ParameterType {
     Enum(Vec<String>),
     Array,
     Object,
+    DateTime,
+    Json,
 }
 
 /// Calculator metadata for API catalogue

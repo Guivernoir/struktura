@@ -1,175 +1,263 @@
 /**
  * @file lib/engineering-helpers.js
- * @description Engineering parameter helpers with type safety
- * Mission objective: Ensure data integrity in hostile environments
+ * @description Engineering parameter builders aligned with Rust backend
+ * Mission objective: Surgical type preservation and data integrity
  */
 
 import { ValidationError } from "./models.js";
 
 /**
- * Engineering parameter builder with surgical type preservation
- * Ensures backend receives data in the exact format it expects
+ * Safe number parser - returns null for empty/invalid values
  */
+const safeFloat = (val) => {
+  if (val === null || val === undefined || val === "") return null;
+  const num = parseFloat(val);
+  return Number.isFinite(num) ? num : null;
+};
+
+/**
+ * Safe string parser - returns null for empty values
+ */
+const safeString = (val) => {
+  if (val === null || val === undefined || val === "") return null;
+  return String(val).trim();
+};
+
+/**
+ * Check if an object has any valid values
+ */
+const hasValidValues = (obj) => {
+  if (!obj || typeof obj !== "object") return false;
+  return Object.values(obj).some(
+    (v) => v !== null && v !== undefined && v !== ""
+  );
+};
+
 export const EngineeringHelpers = {
   /**
-   * Create engineering parameters from form data
-   * Maintains type safety and proper serialization
+   * Create MaterialProperties matching backend struct
+   * Backend expects: material_type (String) + optional f64 fields
+   */
+  createMaterial: (material) => {
+    if (!material || !hasValidValues(material)) return null;
+
+    const result = {
+      material_type: safeString(material.material_type) || "Steel",
+    };
+
+    // Add optional numeric fields only if they have valid values
+    const numericFields = [
+      "compressive_strength",
+      "tensile_strength",
+      "yield_strength",
+      "ultimate_strength",
+      "elastic_modulus",
+      "shear_modulus",
+      "poisson_ratio",
+      "density",
+      "thermal_conductivity",
+      "thermal_expansion",
+      "specific_heat",
+    ];
+
+    numericFields.forEach((field) => {
+      const value = safeFloat(material[field]);
+      if (value !== null) {
+        result[field] = value;
+      }
+    });
+
+    return result;
+  },
+
+  /**
+   * Create LoadCase matching backend struct
+   * Backend expects: dead_load (f64), live_load (f64), load_combination (String)
+   * + optional f64 fields
+   */
+  createLoadCase: (loads) => {
+    if (!loads || !hasValidValues(loads)) return null;
+
+    const deadLoad = safeFloat(loads.dead_load);
+    const liveLoad = safeFloat(loads.live_load);
+
+    // Backend requires dead_load and live_load, but we'll use defaults if missing
+    const result = {
+      dead_load: deadLoad !== null ? deadLoad : 1.0,
+      live_load: liveLoad !== null ? liveLoad : 1.0,
+      load_combination: safeString(loads.load_combination) || "LRFD",
+    };
+
+    // Add optional load types
+    const optionalLoads = [
+      "wind_load",
+      "seismic_load",
+      "snow_load",
+      "impact_load",
+      "tension_load",
+      "shear_load",
+    ];
+
+    optionalLoads.forEach((field) => {
+      const value = safeFloat(loads[field]);
+      if (value !== null) {
+        result[field] = value;
+      }
+    });
+
+    return result;
+  },
+
+  /**
+   * Create SafetyFactors matching backend struct
+   * Backend expects: all fields as f64 (with defaults)
+   */
+  createSafetyFactors: (factors) => {
+    if (!factors || !hasValidValues(factors)) return null;
+
+    const result = {
+      dead_load_factor: safeFloat(factors.dead_load_factor) ?? 1.2,
+      live_load_factor: safeFloat(factors.live_load_factor) ?? 1.6,
+      material_reduction_factor:
+        safeFloat(factors.material_reduction_factor) ?? 0.9,
+      importance_factor: safeFloat(factors.importance_factor) ?? 1.0,
+    };
+
+    // Optional fields
+    const overturning = safeFloat(factors.overturning);
+    if (overturning !== null) result.overturning = overturning;
+
+    const bearing = safeFloat(factors.bearing);
+    if (bearing !== null) result.bearing = bearing;
+
+    return result;
+  },
+
+  /**
+   * Create ProjectMetadata matching backend struct
+   * All fields are Strings
+   */
+  createProjectMetadata: (metadata) => {
+    if (!metadata || !hasValidValues(metadata)) return null;
+
+    const result = {};
+    let hasAnyField = false;
+
+    const fields = [
+      "project_name",
+      "engineer_name",
+      "project_location",
+      "calculation_date",
+    ];
+
+    fields.forEach((field) => {
+      const value = safeString(metadata[field]);
+      if (value !== null) {
+        result[field] = value;
+        hasAnyField = true;
+      }
+    });
+
+    return hasAnyField ? result : null;
+  },
+
+  /**
+   * Create complete EngineeringParameters matching backend struct
+   * This is the main function that builds the request payload
    */
   createParameters: (formData) => {
     const params = {};
 
-    // Dimensions: Always include, convert to numbers
-    if (formData.dimensions && Object.keys(formData.dimensions).length > 0) {
-      params.dimensions = {};
-      for (const [key, value] of Object.entries(formData.dimensions)) {
-        if (value !== null && value !== undefined && value !== "") {
-          params.dimensions[key] = parseFloat(value);
+    // 1. DIMENSIONS (required HashMap<String, f64>)
+    params.dimensions = {};
+    if (formData.dimensions && typeof formData.dimensions === "object") {
+      Object.entries(formData.dimensions).forEach(([key, value]) => {
+        const num = safeFloat(value);
+        if (num !== null) {
+          params.dimensions[key] = num;
         }
-      }
-    } else {
-      params.dimensions = {};
+      });
     }
 
-    // Material: Include if any property is set
-    if (formData.material && Object.keys(formData.material).length > 0) {
-      const material = {};
-      let hasAnyValue = false;
+    // 2. MATERIAL (optional MaterialProperties)
+    const material = EngineeringHelpers.createMaterial(formData.material);
+    if (material) {
+      params.material = material;
+    }
 
-      for (const [key, value] of Object.entries(formData.material)) {
+    // 3. LOADS (optional LoadCase)
+    const loads = EngineeringHelpers.createLoadCase(formData.loads);
+    if (loads) {
+      params.loads = loads;
+    }
+
+    // 4. SAFETY_FACTORS (optional SafetyFactors)
+    const safetyFactors = EngineeringHelpers.createSafetyFactors(
+      formData.safetyFactors
+    );
+    if (safetyFactors) {
+      params.safety_factors = safetyFactors;
+    }
+
+    // 5. DESIGN_CODE (optional String)
+    const designCode = safeString(formData.designCode);
+    if (designCode) {
+      params.design_code = designCode;
+    }
+
+    // 6. EXPOSURE_CLASS (optional String)
+    const exposureClass = safeString(formData.exposureClass);
+    if (exposureClass) {
+      params.exposure_class = exposureClass;
+    }
+
+    // 7. TEMPERATURE (optional f64)
+    const temperature = safeFloat(formData.temperature);
+    if (temperature !== null) {
+      params.temperature = temperature;
+    }
+
+    // 8. HUMIDITY (optional f64)
+    const humidity = safeFloat(formData.humidity);
+    if (humidity !== null) {
+      params.humidity = humidity;
+    }
+
+    // 9. ADDITIONAL (optional HashMap<String, f64>)
+    // Backend expects only numeric values here
+    if (formData.additional && hasValidValues(formData.additional)) {
+      params.additional = {};
+      Object.entries(formData.additional).forEach(([key, value]) => {
+        const num = safeFloat(value);
+        if (num !== null) {
+          params.additional[key] = num;
+        }
+      });
+    }
+
+    // 10. STRUCTURED_DATA (optional HashMap<String, JsonValue>)
+    // This can contain any JSON-serializable values
+    if (formData.structured_data && hasValidValues(formData.structured_data)) {
+      params.structured_data = {};
+      Object.entries(formData.structured_data).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== "") {
-          hasAnyValue = true;
-
-          // material_type is string, everything else is number
-          if (key === "material_type") {
-            material[key] = String(value);
+          // Try to parse as number first, otherwise keep as string or object
+          const num = safeFloat(value);
+          if (num !== null && typeof value !== "object") {
+            params.structured_data[key] = num;
           } else {
-            material[key] = parseFloat(value);
+            params.structured_data[key] = value;
           }
         }
-      }
-
-      if (hasAnyValue) {
-        // Ensure material_type is always present
-        material.material_type = material.material_type || "Steel";
-        params.material = material;
-      }
+      });
     }
 
-    // Loads: Include if any property is set
-    if (formData.loads && Object.keys(formData.loads).length > 0) {
-      const loads = {};
-      let hasAnyValue = false;
-
-      for (const [key, value] of Object.entries(formData.loads)) {
-        if (value !== null && value !== undefined && value !== "") {
-          hasAnyValue = true;
-
-          // load_combination is string, everything else is number
-          if (key === "load_combination") {
-            loads[key] = String(value);
-          } else {
-            loads[key] = parseFloat(value);
-          }
-        }
-      }
-
-      if (hasAnyValue) {
-        // Ensure load_combination has a default
-        loads.load_combination = loads.load_combination || "LRFD";
-
-        // Ensure required fields have defaults
-        if (loads.dead_load === undefined) loads.dead_load = 1.0;
-        if (loads.live_load === undefined) loads.live_load = 1.0;
-
-        params.loads = loads;
-      }
-    }
-
-    // Safety Factors: Include if any property is set
-    if (
-      formData.safetyFactors &&
-      Object.keys(formData.safetyFactors).length > 0
-    ) {
-      const factors = {};
-      let hasAnyValue = false;
-
-      for (const [key, value] of Object.entries(formData.safetyFactors)) {
-        if (value !== null && value !== undefined && value !== "") {
-          hasAnyValue = true;
-          factors[key] = parseFloat(value);
-        }
-      }
-
-      if (hasAnyValue) {
-        params.safety_factors = factors;
-      }
-    }
-
-    // Design Code: String value
-    if (formData.designCode) {
-      params.design_code = String(formData.designCode);
-    }
-
-    // Exposure Class: String value
-    if (formData.exposureClass) {
-      params.exposure_class = String(formData.exposureClass);
-    }
-
-    // Environmental: Numbers
-    if (formData.temperature !== null && formData.temperature !== undefined) {
-      params.temperature = parseFloat(formData.temperature);
-    }
-    if (formData.humidity !== null && formData.humidity !== undefined) {
-      params.humidity = parseFloat(formData.humidity);
-    }
-
-    // Additional: All numbers, preserve string keys
-    if (formData.additional && Object.keys(formData.additional).length > 0) {
-      const additional = {};
-
-      for (const [key, value] of Object.entries(formData.additional)) {
-        if (value !== null && value !== undefined && value !== "") {
-          // CRITICAL: Check if this is supposed to be a string enum
-          // If the key ends with "_type", "_mode", "_method", keep as string
-          if (
-            key.endsWith("_type") ||
-            key.endsWith("_mode") ||
-            key.endsWith("_method") ||
-            key.endsWith("_class") ||
-            key.endsWith("_category")
-          ) {
-            additional[key] = String(value);
-          } else {
-            // Try to parse as number, fall back to string
-            const num = parseFloat(value);
-            additional[key] = isNaN(num) ? String(value) : num;
-          }
-        }
-      }
-
-      if (Object.keys(additional).length > 0) {
-        params.additional = additional;
-      }
-    }
-
-    // Project Metadata: All strings
-    if (
-      formData.projectMetadata &&
-      Object.keys(formData.projectMetadata).length > 0
-    ) {
-      const metadata = {};
-      let hasAnyValue = false;
-
-      for (const [key, value] of Object.entries(formData.projectMetadata)) {
-        if (value !== null && value !== undefined && value !== "") {
-          hasAnyValue = true;
-          metadata[key] = String(value);
-        }
-      }
-
-      if (hasAnyValue) {
-        params.project_metadata = metadata;
-      }
+    // 11. PROJECT_METADATA (optional ProjectMetadata)
+    const projectMetadata = EngineeringHelpers.createProjectMetadata(
+      formData.projectMetadata
+    );
+    if (projectMetadata) {
+      params.project_metadata = projectMetadata;
     }
 
     return params;
@@ -189,6 +277,12 @@ export const EngineeringHelpers = {
       formatted_value:
         result.formatted_value || `${result.value.toFixed(2)} ${result.unit}`,
       is_critical: result.is_critical || false,
+      displayValue:
+        result.formatted_value || `${result.value.toFixed(2)} ${result.unit}`,
+      isCritical: result.is_critical || false,
+      tolerancePercent: result.tolerance
+        ? (result.tolerance * 100).toFixed(1)
+        : null,
     }));
   },
 
@@ -196,7 +290,14 @@ export const EngineeringHelpers = {
    * Group structured warnings by severity
    */
   groupWarnings: (response) => {
-    if (!response?.structured_warnings) return null;
+    if (!response?.structured_warnings) {
+      return {
+        CRITICAL: [],
+        HIGH: [],
+        MEDIUM: [],
+        LOW: [],
+      };
+    }
 
     const grouped = {
       CRITICAL: [],
@@ -219,14 +320,18 @@ export const EngineeringHelpers = {
    * Check if calculation requires PE review
    */
   requiresPEReview: (response) => {
-    return response?.calculation_metadata?.requires_pe_review === true;
+    return (
+      response?.calculation_metadata?.requires_pe_review === true ||
+      response?.structured_warnings?.some((w) => w.severity === "CRITICAL") ||
+      false
+    );
   },
 
   /**
    * Extract critical results only
    */
   getCriticalResults: (results) => {
-    return results.filter((r) => r.is_critical);
+    return results.filter((r) => r.is_critical || r.isCritical);
   },
 
   /**
@@ -290,7 +395,10 @@ export const EngineeringHelpers = {
         }
 
         // Enum validation
-        if (expectedType?.enum && !expectedType.enum.includes(value)) {
+        if (
+          Array.isArray(expectedType?.enum) &&
+          !expectedType.enum.includes(value)
+        ) {
           throw new ValidationError(
             `Parameter '${
               paramMeta.path
@@ -305,23 +413,6 @@ export const EngineeringHelpers = {
 };
 
 /**
- * Safe number parser that handles empty strings and invalid input
+ * Export utility functions for direct use
  */
-export function safeParseFloat(value, defaultValue = null) {
-  if (value === null || value === undefined || value === "") {
-    return defaultValue;
-  }
-
-  const parsed = parseFloat(value);
-  return isNaN(parsed) ? defaultValue : parsed;
-}
-
-/**
- * Safe string parser that handles null/undefined
- */
-export function safeString(value, defaultValue = null) {
-  if (value === null || value === undefined || value === "") {
-    return defaultValue;
-  }
-  return String(value);
-}
+export { safeFloat as safeParseFloat, safeString };

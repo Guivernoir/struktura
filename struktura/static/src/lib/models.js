@@ -121,6 +121,8 @@ export const ParameterType = Object.freeze({
   ENUM: "enum",
   ARRAY: "array",
   OBJECT: "object",
+  DATETIME: "datetime",
+  JSON: "json",
 });
 
 // =============================================================================

@@ -1,81 +1,11 @@
 /**
  * @file hooks/engineer/useValidation.js
- * @description Form validation against calculator metadata
- * Mission objective: Pre-flight checks and quality assurance
+ * @description Form validation against calculator metadata with backend alignment
+ * Mission objective: Pre-flight checks matching Rust backend expectations
  */
 
 import { useCallback } from "react";
 import { ValidationError } from "../../lib";
-
-export function useValidation(calculatorMetadata, formData) {
-  /**
-   * Validate form data against metadata constraints
-   * Returns: { valid: boolean, errors: string[] }
-   */
-  const validate = useCallback(() => {
-    if (!calculatorMetadata) {
-      return {
-        valid: false,
-        errors: ["Calculator metadata not loaded"],
-      };
-    }
-
-    const errors = [];
-
-    // Check required parameters
-    const requiredParams = calculatorMetadata.required_parameters || [];
-    requiredParams.forEach((paramPath) => {
-      const value = getNestedValue(formData, paramPath);
-
-      if (value === undefined || value === null || value === "") {
-        errors.push(`${paramPath} is required`);
-      }
-    });
-
-    // Validate against parameter constraints
-    if (calculatorMetadata.parameters) {
-      calculatorMetadata.parameters.forEach((param) => {
-        if (!param.required) return;
-
-        const value = getNestedValue(formData, param.path);
-
-        if (value !== undefined && value !== null && value !== "") {
-          const numValue = parseFloat(value);
-
-          if (!isNaN(numValue)) {
-            if (param.min_value !== null && numValue < param.min_value) {
-              errors.push(`${param.name} must be >= ${param.min_value}`);
-            }
-            if (param.max_value !== null && numValue > param.max_value) {
-              errors.push(`${param.name} must be <= ${param.max_value}`);
-            }
-          }
-        }
-      });
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
-  }, [formData, calculatorMetadata]);
-
-  /**
-   * Validate and throw on error
-   */
-  const validateOrThrow = useCallback(() => {
-    const { valid, errors } = validate();
-
-    if (!valid) {
-      throw new ValidationError(errors.join("; "));
-    }
-  }, [validate]);
-
-  return {
-    validate,
-    validateOrThrow,
-  };
-}
 
 /**
  * Get nested value from object using dot notation path
@@ -90,4 +20,272 @@ function getNestedValue(obj, path) {
   }
 
   return value;
+}
+
+/**
+ * Check if a value is considered "empty" for validation purposes
+ */
+function isEmpty(value) {
+  return value === null || value === undefined || value === "";
+}
+
+/**
+ * Parse value as number if possible
+ */
+function parseNumeric(value) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const num = parseFloat(value);
+    return isNaN(num) ? null : num;
+  }
+  return null;
+}
+
+export function useValidation(calculatorMetadata, formData) {
+  /**
+   * Validate form data against metadata constraints
+   * Returns: { valid: boolean, errors: ValidationError[], errorMessages: string[] }
+   */
+  const validate = useCallback(() => {
+    if (!calculatorMetadata) {
+      return {
+        valid: false,
+        errors: [new ValidationError("Calculator metadata not loaded")],
+        errorMessages: ["Calculator metadata not loaded"],
+      };
+    }
+
+    const errors = [];
+    const errorMessages = [];
+
+    // Check required parameters from metadata
+    if (calculatorMetadata.parameters) {
+      calculatorMetadata.parameters.forEach((param) => {
+        // Skip if not required
+        if (!param.required) return;
+
+        const value = getNestedValue(formData, param.path);
+
+        // Check if value is empty
+        if (isEmpty(value)) {
+          const error = new ValidationError(
+            `${param.name} is required`,
+            param.path,
+            value
+          );
+          errors.push(error);
+          errorMessages.push(`${param.name} is required`);
+          return;
+        }
+
+        // Validate based on data type
+        if (param.data_type === "number" || param.data_type === "integer") {
+          const numValue = parseNumeric(value);
+
+          if (numValue === null) {
+            const error = new ValidationError(
+              `${param.name} must be a valid number`,
+              param.path,
+              value
+            );
+            errors.push(error);
+            errorMessages.push(`${param.name} must be a valid number`);
+            return;
+          }
+
+          // Check min value constraint
+          if (param.min_value !== null && param.min_value !== undefined) {
+            if (numValue < param.min_value) {
+              const error = new ValidationError(
+                `${param.name} must be >= ${param.min_value}`,
+                param.path,
+                numValue
+              );
+              errors.push(error);
+              errorMessages.push(`${param.name} must be >= ${param.min_value}`);
+            }
+          }
+
+          // Check max value constraint
+          if (param.max_value !== null && param.max_value !== undefined) {
+            if (numValue > param.max_value) {
+              const error = new ValidationError(
+                `${param.name} must be <= ${param.max_value}`,
+                param.path,
+                numValue
+              );
+              errors.push(error);
+              errorMessages.push(`${param.name} must be <= ${param.max_value}`);
+            }
+          }
+
+          // Integer-specific validation
+          if (param.data_type === "integer" && !Number.isInteger(numValue)) {
+            const error = new ValidationError(
+              `${param.name} must be an integer`,
+              param.path,
+              numValue
+            );
+            errors.push(error);
+            errorMessages.push(`${param.name} must be an integer`);
+          }
+        }
+
+        // String validation
+        if (param.data_type === "string" && typeof value !== "string") {
+          const error = new ValidationError(
+            `${param.name} must be a string`,
+            param.path,
+            value
+          );
+          errors.push(error);
+          errorMessages.push(`${param.name} must be a string`);
+        }
+
+        // Enum validation
+        if (param.data_type?.enum && Array.isArray(param.data_type.enum)) {
+          if (!param.data_type.enum.includes(value)) {
+            const error = new ValidationError(
+              `${param.name} must be one of: ${param.data_type.enum.join(
+                ", "
+              )}`,
+              param.path,
+              value
+            );
+            errors.push(error);
+            errorMessages.push(
+              `${param.name} must be one of: ${param.data_type.enum.join(", ")}`
+            );
+          }
+        }
+      });
+    }
+
+    // Legacy validation using required_parameters array
+    if (calculatorMetadata.required_parameters) {
+      calculatorMetadata.required_parameters.forEach((paramPath) => {
+        const value = getNestedValue(formData, paramPath);
+
+        if (isEmpty(value)) {
+          // Skip if already reported by parameter metadata validation
+          if (!errors.some((e) => e.field === paramPath)) {
+            const error = new ValidationError(
+              `${paramPath} is required`,
+              paramPath,
+              value
+            );
+            errors.push(error);
+            errorMessages.push(`${paramPath} is required`);
+          }
+        }
+      });
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      errorMessages,
+    };
+  }, [formData, calculatorMetadata]);
+
+  /**
+   * Validate and throw on error
+   */
+  const validateOrThrow = useCallback(() => {
+    const { valid, errorMessages } = validate();
+
+    if (!valid) {
+      throw new ValidationError(errorMessages.join("; "));
+    }
+  }, [validate]);
+
+  /**
+   * Validate a specific field
+   */
+  const validateField = useCallback(
+    (path) => {
+      if (!calculatorMetadata?.parameters) {
+        return { valid: true, error: null };
+      }
+
+      const param = calculatorMetadata.parameters.find((p) => p.path === path);
+      if (!param) {
+        return { valid: true, error: null };
+      }
+
+      const value = getNestedValue(formData, path);
+
+      // Check required
+      if (param.required && isEmpty(value)) {
+        return {
+          valid: false,
+          error: `${param.name} is required`,
+        };
+      }
+
+      // If empty and not required, it's valid
+      if (isEmpty(value)) {
+        return { valid: true, error: null };
+      }
+
+      // Type-specific validation
+      if (param.data_type === "number" || param.data_type === "integer") {
+        const numValue = parseNumeric(value);
+
+        if (numValue === null) {
+          return {
+            valid: false,
+            error: `${param.name} must be a valid number`,
+          };
+        }
+
+        if (
+          param.min_value !== null &&
+          param.min_value !== undefined &&
+          numValue < param.min_value
+        ) {
+          return {
+            valid: false,
+            error: `${param.name} must be >= ${param.min_value}`,
+          };
+        }
+
+        if (
+          param.max_value !== null &&
+          param.max_value !== undefined &&
+          numValue > param.max_value
+        ) {
+          return {
+            valid: false,
+            error: `${param.name} must be <= ${param.max_value}`,
+          };
+        }
+
+        if (param.data_type === "integer" && !Number.isInteger(numValue)) {
+          return {
+            valid: false,
+            error: `${param.name} must be an integer`,
+          };
+        }
+      }
+
+      return { valid: true, error: null };
+    },
+    [formData, calculatorMetadata]
+  );
+
+  /**
+   * Get all validation errors without throwing
+   */
+  const getValidationErrors = useCallback(() => {
+    const { errors, errorMessages } = validate();
+    return { errors, messages: errorMessages };
+  }, [validate]);
+
+  return {
+    validate,
+    validateOrThrow,
+    validateField,
+    getValidationErrors,
+  };
 }
