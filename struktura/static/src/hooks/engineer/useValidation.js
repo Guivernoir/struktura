@@ -2,6 +2,7 @@
  * @file hooks/engineer/useValidation.js
  * @description Form validation against calculator metadata with backend alignment
  * Mission objective: Pre-flight checks matching Rust backend expectations
+ * Now with extended_parameters support - because validation is surgical, not optional
  */
 
 import { useCallback } from "react";
@@ -9,9 +10,20 @@ import { ValidationError } from "../../lib";
 
 /**
  * Get nested value from object using dot notation path
+ * Handles extended_parameters specially
  */
 function getNestedValue(obj, path) {
   const pathParts = path.split(".");
+
+  // Handle extended_parameters
+  if (
+    pathParts[0] === "extended_parameters" ||
+    pathParts[0] === "extendedParameters"
+  ) {
+    const paramName = pathParts.slice(1).join(".");
+    return obj.extendedParameters?.[paramName];
+  }
+
   let value = obj;
 
   for (const part of pathParts) {
@@ -26,7 +38,12 @@ function getNestedValue(obj, path) {
  * Check if a value is considered "empty" for validation purposes
  */
 function isEmpty(value) {
-  return value === null || value === undefined || value === "";
+  if (value === null || value === undefined || value === "") return true;
+
+  // Empty arrays are considered empty
+  if (Array.isArray(value) && value.length === 0) return true;
+
+  return false;
 }
 
 /**
@@ -39,6 +56,35 @@ function parseNumeric(value) {
     return isNaN(num) ? null : num;
   }
   return null;
+}
+
+/**
+ * Validate array items
+ */
+function validateArrayItems(items, param) {
+  const errors = [];
+
+  if (!Array.isArray(items)) {
+    errors.push(
+      new ValidationError(`${param.name} must be an array`, param.path, items)
+    );
+    return errors;
+  }
+
+  // Each item should be an object with required fields
+  items.forEach((item, index) => {
+    if (typeof item !== "object" || item === null) {
+      errors.push(
+        new ValidationError(
+          `${param.name}[${index}] must be an object`,
+          `${param.path}[${index}]`,
+          item
+        )
+      );
+    }
+  });
+
+  return errors;
 }
 
 export function useValidation(calculatorMetadata, formData) {
@@ -132,14 +178,49 @@ export function useValidation(calculatorMetadata, formData) {
         }
 
         // String validation
-        if (param.data_type === "string" && typeof value !== "string") {
-          const error = new ValidationError(
-            `${param.name} must be a string`,
-            param.path,
-            value
-          );
-          errors.push(error);
-          errorMessages.push(`${param.name} must be a string`);
+        if (param.data_type === "string") {
+          if (typeof value !== "string") {
+            const error = new ValidationError(
+              `${param.name} must be a string`,
+              param.path,
+              value
+            );
+            errors.push(error);
+            errorMessages.push(`${param.name} must be a string`);
+          }
+        }
+
+        // DateTime validation
+        if (param.data_type === "datetime") {
+          if (typeof value !== "string" || !value.includes("T")) {
+            const error = new ValidationError(
+              `${param.name} must be a valid ISO 8601 datetime`,
+              param.path,
+              value
+            );
+            errors.push(error);
+            errorMessages.push(`${param.name} must be a valid datetime`);
+          }
+        }
+
+        // Boolean validation
+        if (param.data_type === "boolean") {
+          if (typeof value !== "boolean") {
+            const error = new ValidationError(
+              `${param.name} must be a boolean`,
+              param.path,
+              value
+            );
+            errors.push(error);
+            errorMessages.push(`${param.name} must be true or false`);
+          }
+        }
+
+        // Array validation
+        if (param.data_type === "array") {
+          const arrayErrors = validateArrayItems(value, param);
+          errors.push(...arrayErrors);
+          arrayErrors.forEach((err) => errorMessages.push(err.message));
         }
 
         // Enum validation
@@ -265,6 +346,33 @@ export function useValidation(calculatorMetadata, formData) {
           return {
             valid: false,
             error: `${param.name} must be an integer`,
+          };
+        }
+      }
+
+      // Array validation
+      if (param.data_type === "array") {
+        if (!Array.isArray(value)) {
+          return {
+            valid: false,
+            error: `${param.name} must be an array`,
+          };
+        }
+
+        if (param.required && value.length === 0) {
+          return {
+            valid: false,
+            error: `${param.name} must have at least one item`,
+          };
+        }
+      }
+
+      // DateTime validation
+      if (param.data_type === "datetime") {
+        if (typeof value !== "string" || !value.includes("T")) {
+          return {
+            valid: false,
+            error: `${param.name} must be a valid datetime`,
           };
         }
       }

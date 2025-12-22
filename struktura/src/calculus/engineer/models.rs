@@ -101,6 +101,95 @@ impl DesignCode {
 }
 
 // ============================================================================
+// TYPED PARAMETER VALUE SYSTEM
+// ============================================================================
+
+/// Strongly-typed parameter value that maps to ParameterType
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value")]
+pub enum ParameterValue {
+    Number(f64),
+    Integer(i64),
+    String(String),
+    Boolean(bool),
+    Array(Vec<JsonValue>),
+    Object(HashMap<String, JsonValue>),
+    DateTime(String),
+    
+    // Specialized types for engineering
+    NumberArray(Vec<f64>),
+    StringArray(Vec<String>),
+}
+
+impl ParameterValue {
+    /// Extract as f64 if it's a Number
+    pub fn as_number(&self) -> Option<f64> {
+        match self {
+            Self::Number(n) => Some(*n),
+            Self::Integer(i) => Some(*i as f64),
+            _ => None,
+        }
+    }
+    
+    /// Extract as i64 if it's an Integer
+    pub fn as_integer(&self) -> Option<i64> {
+        match self {
+            Self::Integer(i) => Some(*i),
+            Self::Number(n) => Some(*n as i64),
+            _ => None,
+        }
+    }
+    
+    /// Extract as String if it's a String or DateTime
+    pub fn as_string(&self) -> Option<&str> {
+        match self {
+            Self::String(s) | Self::DateTime(s) => Some(s),
+            _ => None,
+        }
+    }
+    
+    /// Extract as bool if it's a Boolean
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            Self::Boolean(b) => Some(*b),
+            _ => None,
+        }
+    }
+    
+    /// Extract as array of JSON values
+    pub fn as_array(&self) -> Option<&Vec<JsonValue>> {
+        match self {
+            Self::Array(arr) => Some(arr),
+            _ => None,
+        }
+    }
+    
+    /// Extract as object (HashMap)
+    pub fn as_object(&self) -> Option<&HashMap<String, JsonValue>> {
+        match self {
+            Self::Object(obj) => Some(obj),
+            _ => None,
+        }
+    }
+    
+    /// Extract as array of numbers
+    pub fn as_number_array(&self) -> Option<&Vec<f64>> {
+        match self {
+            Self::NumberArray(arr) => Some(arr),
+            _ => None,
+        }
+    }
+    
+    /// Extract as array of strings
+    pub fn as_string_array(&self) -> Option<&Vec<String>> {
+        match self {
+            Self::StringArray(arr) => Some(arr),
+            _ => None,
+        }
+    }
+}
+
+// ============================================================================
 // INPUT MODELS
 // ============================================================================
 
@@ -224,8 +313,7 @@ impl Default for SafetyFactors {
     }
 }
 
-
-/// Comprehensive engineering parameters
+/// Comprehensive engineering parameters with enhanced type system
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EngineeringParameters {
     /// Geometric dimensions (meters, radians for angles)
@@ -255,38 +343,43 @@ pub struct EngineeringParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub humidity: Option<f64>,
     
-    /// Additional calculator-specific parameters (simple numeric values)
+    // ======================================================================
+    // NEW: Calculation date/time
+    // ======================================================================
+    /// ISO 8601 timestamp for when this calculation was requested
+    /// Format: "2025-12-21T10:30:00Z"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub calculation_date: Option<String>,
+    
+    // ======================================================================
+    // NEW: Strongly-typed extended parameters (replaces structured_data)
+    // ======================================================================
+    /// Extended parameters with full type support beyond simple f64 values.
+    /// Supports: Number, Integer, String, Boolean, Array, Object, DateTime, etc.
+    /// 
+    /// This is "additional on steroids" - use this for any complex data types
+    /// that don't fit in the standard fields above.
+    /// 
+    /// Examples:
+    /// - Time series data: NumberArray
+    /// - Event lists: Array of Objects
+    /// - Categorical data: String
+    /// - Timestamps: DateTime
+    /// - Configuration objects: Object
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extended_parameters: Option<HashMap<String, ParameterValue>>,
+    
+    // ======================================================================
+    // LEGACY FIELDS - Maintained for backward compatibility
+    // ======================================================================
+    /// Simple numeric parameters (legacy - use extended_parameters for new code)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub additional: Option<HashMap<String, f64>>,
     
-    // ======================================================================
-    // NEW FIELD - Complex structured data support
-    // ======================================================================
-    /// Complex structured data for calculators requiring arrays, nested objects,
-    /// timestamps, or other non-numeric data types.
-    /// 
-    /// Key-value pairs where values can be any valid JSON:
-    /// - Arrays: event lists, time series data
-    /// - Objects: nested structures, complex configurations  
-    /// - Strings: timestamps, categorical data
-    /// - Mixed types: whatever the calculator needs
-    /// 
-    /// Example for OEE calculator:
-    /// ```json
-    /// {
-    ///   "shift_data": {
-    ///     "start_time": "2025-12-18T06:00:00Z",
-    ///     "end_time": "2025-12-18T14:00:00Z",
-    ///     "planned_downtime": 30.0
-    ///   },
-    ///   "downtime_events": [...],
-    ///   "production_runs": [...],
-    ///   "quality_events": [...]
-    /// }
-    /// ```
+    /// Complex JSON data (deprecated - use extended_parameters instead)
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[deprecated(since = "0.2.0", note = "Use extended_parameters instead")]
     pub structured_data: Option<HashMap<String, JsonValue>>,
-    // ======================================================================
     
     /// Optional project metadata
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -491,7 +584,6 @@ pub enum ParameterType {
     Array,
     Object,
     DateTime,
-    Json,
 }
 
 /// Calculator metadata for API catalogue
@@ -647,9 +739,6 @@ impl MetadataBuilder {
     }
     
     pub fn build(self) -> EngineeringCalculatorMetadata {
-        //let (required, optional): (Vec<_>, Vec<_>) = self.parameters.iter()
-        //    .partition(|p| p.required);
-
         let required_parameters: Vec<String> = self.parameters.iter()
             .filter(|p| p.required)
             .map(|p| p.path.clone())
@@ -698,5 +787,17 @@ mod tests {
         assert!(result.is_critical);
         assert_eq!(result.tolerance, Some(0.05));
         assert_eq!(result.formatted_value, Some("42.00 m".to_string()));
+    }
+    
+    #[test]
+    fn test_parameter_value_extraction() {
+        let num = ParameterValue::Number(42.5);
+        assert_eq!(num.as_number(), Some(42.5));
+        
+        let text = ParameterValue::String("test".to_string());
+        assert_eq!(text.as_string(), Some("test"));
+        
+        let datetime = ParameterValue::DateTime("2025-12-21T10:00:00Z".to_string());
+        assert_eq!(datetime.as_string(), Some("2025-12-21T10:00:00Z"));
     }
 }

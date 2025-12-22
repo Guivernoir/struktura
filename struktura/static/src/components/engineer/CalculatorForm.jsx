@@ -1,7 +1,13 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import Icon from "../Icon";
+import ArrayInput from "./ArrayInput";
 import { DesignCodes, DesignCodeNames, formatDesignCode } from "../../lib";
+import {
+  ARRAY_SCHEMAS,
+  isoToDatetimeLocal,
+  datetimeLocalToISO,
+} from "../../hooks/engineer/types";
 
 const CalculatorForm = ({
   t,
@@ -21,6 +27,7 @@ const CalculatorForm = ({
     dimensions: true,
     material: false,
     loads: false,
+    extended: true,
     advanced: false,
   });
 
@@ -34,15 +41,53 @@ const CalculatorForm = ({
     const field = pathParts.slice(1).join(".");
 
     // Helper to get deep value
-    let value = formData;
-    pathParts.forEach((part) => {
-      value = value?.[part] ?? ""; // Use nullish coalescing for safety
-    });
+    let value;
+
+    if (section === "extended_parameters" || section === "extendedParameters") {
+      // Direct lookup in the flat extendedParameters object using the dotted field name
+      value = formData.extendedParameters?.[field] ?? "";
+    } else {
+      // Standard recursive lookup for dimensions, material, etc.
+      value = formData;
+      pathParts.forEach((part) => {
+        value = value?.[part] ?? "";
+      });
+    }
 
     // Check if data_type is an Enum (which comes from Rust as an object: { "enum": [...] })
-    // or if validation_rules imply a selection.
     const isEnum = typeof param.data_type === "object" && param.data_type.enum;
     const options = isEnum ? param.data_type.enum : [];
+
+    // Handle Array type
+    if (param.data_type === "array") {
+      // Determine which array schema to use
+      const arrayKey = pathParts[pathParts.length - 1];
+      const itemSchema = ARRAY_SCHEMAS[arrayKey] || {
+        fields: [
+          {
+            name: "value",
+            label: "Value",
+            type: "string",
+            required: true,
+          },
+        ],
+      };
+
+      return (
+        <div key={param.path} className="col-span-1 md:col-span-2">
+          <ArrayInput
+            label={param.name}
+            name={param.path}
+            value={Array.isArray(value) ? value : []}
+            onChange={handleFormEvent}
+            itemSchema={itemSchema}
+            required={param.required}
+            helpText={param.description}
+            t={t}
+          />
+        </div>
+      );
+    }
 
     const renderInput = () => {
       // 1. Render Dropdown for Enums
@@ -52,7 +97,6 @@ const CalculatorForm = ({
             name={param.path}
             value={value}
             onChange={(e) => {
-              // Pass raw value for enums (strings)
               const event = {
                 target: { name: param.path, value: e.target.value },
               };
@@ -65,36 +109,84 @@ const CalculatorForm = ({
             </option>
             {options.map((opt) => (
               <option key={opt} value={opt}>
-                {opt.charAt(0).toUpperCase() + opt.slice(1)} {/* Capitalize */}
+                {opt.charAt(0).toUpperCase() + opt.slice(1)}
               </option>
             ))}
           </select>
         );
       }
 
-      // 2. Render Text Input for Strings
+      // 2. Render DateTime Input
+      if (param.data_type === "datetime") {
+        // Convert ISO to datetime-local format for input
+        const localValue = value ? isoToDatetimeLocal(value) : "";
+
+        return (
+          <input
+            type="datetime-local"
+            name={param.path}
+            value={localValue}
+            onChange={(e) => {
+              // Convert datetime-local back to ISO 8601 for storage
+              const isoValue = datetimeLocalToISO(e.target.value);
+              const event = {
+                target: { name: param.path, value: isoValue },
+              };
+              handleFormEvent(event);
+            }}
+            className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white"
+          />
+        );
+      }
+
+      // 3. Render Text Input for Strings
       if (param.data_type === "string") {
         return (
           <input
             type="text"
             name={param.path}
             value={value}
-            onChange={handleInputChange} // This handles strings correctly now
+            onChange={handleInputChange}
+            placeholder={param.description}
             className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white"
           />
         );
       }
 
-      // 3. Default: Render Number Input
+      // 4. Render Boolean Checkbox
+      if (param.data_type === "boolean") {
+        return (
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              name={param.path}
+              checked={Boolean(value)}
+              onChange={(e) => {
+                const event = {
+                  target: { name: param.path, value: e.target.checked },
+                };
+                handleFormEvent(event);
+              }}
+              className="w-5 h-5 text-indigo-600 border-sand-300 dark:border-charcoal-700 rounded focus:ring-indigo-500"
+            />
+            <span className="text-sm text-charcoal-700 dark:text-steel-300">
+              {param.description || "Enable"}
+            </span>
+          </label>
+        );
+      }
+
+      // 5. Default: Render Number Input
       return (
         <input
           type="number"
           name={param.path}
           value={value}
-          onChange={handleFormEvent} // Use form event to parse float
+          onChange={handleFormEvent}
           min={param.min_value ?? undefined}
           max={param.max_value ?? undefined}
           step={param.data_type === "integer" ? "1" : "0.1"}
+          placeholder={param.description}
           className="w-full p-3 border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-xl text-charcoal-900 dark:text-white"
         />
       );
@@ -114,6 +206,11 @@ const CalculatorForm = ({
           )}
         </div>
         {renderInput()}
+        {param.description && param.data_type !== "boolean" && (
+          <p className="text-xs text-charcoal-500 dark:text-steel-500">
+            {param.description}
+          </p>
+        )}
       </div>
     );
   };
@@ -124,7 +221,7 @@ const CalculatorForm = ({
     );
   };
 
-  const renderSection = (section, title) => {
+  const renderSection = (section, title, defaultExpanded = false) => {
     const params = getSectionParameters(section);
     if (params.length === 0) return null;
 
@@ -132,9 +229,16 @@ const CalculatorForm = ({
       <div className="space-y-3">
         <button
           onClick={() => toggleSection(section)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-sand-100 dark:bg-charcoal-800 rounded-xl text-sm font-medium text-charcoal-800 dark:text-steel-200"
+          className="w-full flex items-center justify-between px-4 py-3 bg-sand-100 dark:bg-charcoal-800 rounded-xl text-sm font-medium text-charcoal-800 dark:text-steel-200 hover:bg-sand-200 dark:hover:bg-charcoal-700 transition"
         >
-          <span>{title}</span>
+          <div className="flex items-center gap-2">
+            <span>{title}</span>
+            {params.some((p) => p.required) && (
+              <span className="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">
+                {t?.engineer?.form?.required || "Required"}
+              </span>
+            )}
+          </div>
           <Icon
             name={expandedSections[section] ? "ChevronUp" : "ChevronDown"}
             size={16}
@@ -205,11 +309,46 @@ const CalculatorForm = ({
             </option>
           ))}
         </select>
+
+        {selectedCalculator && calculatorMeta && (
+          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              {calculatorMeta.description}
+            </p>
+            {calculatorMeta.complexity_level && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                  Complexity:
+                </span>
+                <span
+                  className={`px-2 py-0.5 text-xs rounded ${
+                    calculatorMeta.complexity_level === "basic"
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                      : calculatorMeta.complexity_level === "intermediate"
+                      ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300"
+                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                  }`}
+                >
+                  {calculatorMeta.complexity_level.charAt(0).toUpperCase() +
+                    calculatorMeta.complexity_level.slice(1)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {selectedCalculator && calculatorMeta && (
         <>
-          {/* Sections */}
+          {/* Extended Parameters Section (NEW) */}
+          {renderSection(
+            "extended_parameters",
+            t?.engineer?.form?.sections?.extended_parameters ||
+              "Calculator Parameters",
+            true
+          )}
+
+          {/* Standard Sections */}
           {renderSection(
             "dimensions",
             t?.engineer?.form?.sections?.dimensions || "Dimensions"
@@ -232,10 +371,7 @@ const CalculatorForm = ({
           )}
 
           {/* Top-level fields like designCode, exposureClass, etc. */}
-          <div className="space-y-4">
-            {renderDesignCodeSelector()}
-            {/* Add similar for exposureClass, temperature, humidity if in metadata */}
-          </div>
+          <div className="space-y-4">{renderDesignCodeSelector()}</div>
         </>
       )}
 
@@ -288,6 +424,7 @@ CalculatorForm.propTypes = {
   calculatorMeta: PropTypes.object,
   formData: PropTypes.object.isRequired,
   handleInputChange: PropTypes.func.isRequired,
+  handleFormEvent: PropTypes.func.isRequired,
   handleCalculate: PropTypes.func.isRequired,
   isLoading: PropTypes.bool.isRequired,
   error: PropTypes.string,

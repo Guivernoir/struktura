@@ -2,10 +2,11 @@
  * @file helpers.js
  * @description Engineering parameter builders and result formatters
  * Mission objective: Strategic asset construction and intelligence formatting
+ * Now with extended_parameters support - proper type safety, no JSON archaeology
  */
 
 import { Validators } from "./validators.js";
-import { WarningSeverity } from "./models.js";
+import { WarningSeverity, ParameterType } from "./models.js";
 
 // Helper to safely parse a float and return null if invalid.
 const safeFloat = (val) => {
@@ -14,14 +15,196 @@ const safeFloat = (val) => {
   return Number.isFinite(num) ? num : null;
 };
 
+// [NEW] Recursive sanitizer to clean nested structures
+// Converts "" to null, and ensures strings meant to be numbers are parsed
+const deepSanitize = (data) => {
+  if (data === null || data === undefined) return null;
+
+  // Convert empty strings to null immediately
+  if (data === "") return null;
+
+  // Handle Arrays
+  if (Array.isArray(data)) {
+    return data.map(deepSanitize);
+  }
+
+  // Handle Objects
+  if (typeof data === "object") {
+    const cleaned = {};
+    for (const [key, val] of Object.entries(data)) {
+      cleaned[key] = deepSanitize(val);
+    }
+    return cleaned;
+  }
+
+  // Auto-convert numeric strings that are definitely numbers
+  // This prevents "300" (string) from breaking an f64 expectation in untyped maps
+  if (typeof data === "string" && !isNaN(data) && !isNaN(parseFloat(data))) {
+    // Check if it looks like a date first to avoid converting timestamps to NaNs or weird numbers
+    if (!data.includes("-") && !data.includes("T")) {
+      return parseFloat(data);
+    }
+  }
+
+  return data;
+};
+
 export const EngineeringHelpers = {
+  sanitizeNumbers: (obj) => {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      sanitized[key] = parseFloat(value);
+    }
+    return sanitized;
+  },
+
+  /**
+   * Build ParameterValue object for backend
+   * Converts frontend values to proper ParameterValue enum format
+   */
+  buildParameterValue: (value, dataType) => {
+    if (value === null || value === undefined || value === "") {
+      return null;
+    }
+
+    switch (dataType) {
+      case ParameterType.NUMBER:
+        return {
+          type: "Number",
+          value: typeof value === "number" ? value : parseFloat(value),
+        };
+
+      case ParameterType.INTEGER:
+        return {
+          type: "Integer",
+          value:
+            typeof value === "number" ? Math.floor(value) : parseInt(value, 10),
+        };
+
+      case ParameterType.STRING:
+        return {
+          type: "String",
+          value: String(value),
+        };
+
+      case ParameterType.DATETIME: {
+        // Convert datetime-local to ISO 8601 if needed (adds missing Z)
+        let isoDate = value;
+        if (!value.includes("Z") && !value.includes("+")) {
+          try {
+            isoDate = new Date(value).toISOString();
+          } catch (e) {
+            isoDate = value; // Fallback if invalid
+          }
+        }
+        return {
+          type: "DateTime",
+          value: isoDate,
+        };
+      }
+
+      case ParameterType.BOOLEAN:
+        return {
+          type: "Boolean",
+          value: Boolean(value),
+        };
+
+      case ParameterType.ARRAY:
+        return {
+          type: "Array",
+          value: Array.isArray(value) ? value : [],
+        };
+
+      case ParameterType.OBJECT:
+        return {
+          type: "Object",
+          value: typeof value === "object" ? value : {},
+        };
+
+      default:
+        // Default to string
+        return {
+          type: "String",
+          value: String(value),
+        };
+    }
+  },
+
+  /**
+   * Build extended parameters with proper ParameterValue types
+   *
+   * @param {Object} extendedParams - Raw extended parameter values
+   * @param {Array} parameterMetadata - Parameter metadata from calculator
+   * @returns {Object} Properly typed extended parameters
+   */
+  buildExtendedParameters: (extendedParams, parameterMetadata = []) => {
+    if (!extendedParams || Object.keys(extendedParams).length === 0) {
+      return null;
+    }
+
+    const extended = {};
+
+    Object.entries(extendedParams).forEach(([key, value]) => {
+      // Find parameter metadata to get data type
+      const param = parameterMetadata.find(
+        (p) =>
+          p.path === `extended_parameters.${key}` ||
+          p.path === `extendedParameters.${key}`
+      );
+
+      if (param && param.data_type) {
+        const paramValue = EngineeringHelpers.buildParameterValue(
+          value,
+          param.data_type
+        );
+        if (paramValue !== null) {
+          extended[key] = paramValue;
+        }
+      } else {
+        // Fallback: Inference with Deep Sanitization
+        const cleanValue = deepSanitize(value);
+
+        if (cleanValue === null) return;
+
+        if (Array.isArray(cleanValue)) {
+          extended[key] = { type: "Array", value: cleanValue };
+        } else if (typeof cleanValue === "number") {
+          if (Number.isInteger(cleanValue)) {
+            extended[key] = { type: "Integer", value: cleanValue };
+          } else {
+            extended[key] = { type: "Number", value: cleanValue };
+          }
+        } else if (typeof cleanValue === "boolean") {
+          extended[key] = { type: "Boolean", value: cleanValue };
+        } else if (typeof cleanValue === "string") {
+          // [FIX] Improved DateTime detection and normalization
+          // Detects strings starting with YYYY-MM-DD and containing T
+          if (/^\d{4}-\d{2}-\d{2}T/.test(cleanValue)) {
+            try {
+              // Force ISO format (adds Z)
+              const iso = new Date(cleanValue).toISOString();
+              extended[key] = { type: "DateTime", value: iso };
+            } catch (e) {
+              // If date parsing fails, treat as string
+              extended[key] = { type: "String", value: cleanValue };
+            }
+          } else {
+            extended[key] = { type: "String", value: cleanValue };
+          }
+        } else if (typeof cleanValue === "object") {
+          extended[key] = { type: "Object", value: cleanValue };
+        }
+      }
+    });
+
+    return Object.keys(extended).length > 0 ? extended : null;
+  },
+
   /**
    * Construct load case with military precision
    */
   createLoadCase: (loads) => {
     if (!loads) return null;
-
-    //Validators.required(loads, ["dead_load", "live_load", "load_combination"]);
 
     const deadLoad = safeFloat(loads.dead_load);
     const liveLoad = safeFloat(loads.live_load);
@@ -53,14 +236,10 @@ export const EngineeringHelpers = {
    * Construct material properties specification
    */
   createMaterial: (mat) => {
-    // FIX: Check for empty objects to prevent validation errors on initialized state
     if (!mat || Object.keys(mat).length === 0) return null;
 
-    // FIX: Removed strict validation for "material_type" to allow the default "Generic" to work
-    // Validators.required(mat, ["material_type"]);
-
     const material = {
-      material_type: mat.material_type || "Generic", // Fallback now functions correctly
+      material_type: mat.material_type || "Generic",
     };
 
     const addIfValid = (key, sourceKey) => {
@@ -150,6 +329,7 @@ export const EngineeringHelpers = {
 
   /**
    * Construct complete engineering parameters package
+   * Now with extended_parameters support - the future is typed
    */
   createParameters: ({
     dimensions = {},
@@ -160,47 +340,56 @@ export const EngineeringHelpers = {
     exposureClass = null,
     temperature = null,
     humidity = null,
+    calculationDate = null,
+    extendedParameters = null,
+    parameterMetadata = [],
     additional = null,
     structured_data = null,
     projectMetadata = null,
   }) => {
     const params = {
       dimensions: {},
-      structured_data: structured_data || {},
     };
 
+    // Add calculation date
+    params.calculation_date = calculationDate || new Date().toISOString();
+
+    // Process dimensions
     if (dimensions) {
       for (const [key, value] of Object.entries(dimensions)) {
         const parsed = parseFloat(value);
         if (Number.isFinite(parsed)) {
           params.dimensions[key] = parsed;
         } else {
-          console.warn(
-            `[EngineeringHelpers] Skipping invalid dimension: ${key} = ${value}`
-          );
+          // Optional: log warning only in debug mode
         }
       }
     }
 
+    // Process material
     if (material) {
       const mat = EngineeringHelpers.createMaterial(material);
       if (mat) params.material = mat;
     }
 
+    // Process loads
     if (loads) {
       const l = EngineeringHelpers.createLoadCase(loads);
       if (l) params.loads = l;
     }
 
+    // Process safety factors
     if (safetyFactors) {
       params.safety_factors =
         EngineeringHelpers.createSafetyFactors(safetyFactors);
     }
 
+    // Process design code
     if (designCode) {
       params.design_code = Validators.designCode(designCode);
     }
 
+    // Process environmental conditions
     if (exposureClass) params.exposure_class = exposureClass;
 
     const temp = safeFloat(temperature);
@@ -209,6 +398,18 @@ export const EngineeringHelpers = {
     const hum = safeFloat(humidity);
     if (hum !== null) params.humidity = hum;
 
+    // NEW: Process extended parameters with proper ParameterValue typing
+    if (extendedParameters) {
+      const extended = EngineeringHelpers.buildExtendedParameters(
+        extendedParameters,
+        parameterMetadata
+      );
+      if (extended) {
+        params.extended_parameters = extended;
+      }
+    }
+
+    // LEGACY: Process additional parameters (HashMap<String, f64>)
     if (additional) {
       params.additional = {};
       for (const [key, value] of Object.entries(additional)) {
@@ -219,6 +420,12 @@ export const EngineeringHelpers = {
       }
     }
 
+    // LEGACY: Process structured_data (deprecated, but kept for backward compatibility)
+    if (structured_data) {
+      params.structured_data = structured_data;
+    }
+
+    // Process project metadata
     if (projectMetadata) {
       params.project_metadata =
         EngineeringHelpers.createProjectMetadata(projectMetadata);
@@ -276,5 +483,27 @@ export const EngineeringHelpers = {
       ) ||
       false
     );
+  },
+
+  /**
+   * Convert datetime-local input to ISO 8601
+   */
+  datetimeLocalToISO: (datetimeLocal) => {
+    if (!datetimeLocal) return "";
+    return new Date(datetimeLocal).toISOString();
+  },
+
+  /**
+   * Convert ISO 8601 to datetime-local input format
+   */
+  isoToDatetimeLocal: (iso) => {
+    if (!iso) return "";
+    const date = new Date(iso);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   },
 };

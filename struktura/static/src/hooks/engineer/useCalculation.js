@@ -53,6 +53,8 @@ export function useCalculation(
         exposureClass: formData.exposureClass,
         temperature: formData.temperature,
         humidity: formData.humidity,
+        calculationDate: formData.calculationDate,
+        extendedParameters: formData.extendedParameters || {},
         additional: formData.additional,
         projectMetadata: formData.projectMetadata,
       });

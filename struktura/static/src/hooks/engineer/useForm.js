@@ -2,6 +2,7 @@
  * @file hooks/engineer/useForm.js
  * @description Professional form state management with robust nested handling
  * Mission objective: Complex parameter control with type-safe updates
+ * Now with extended_parameters support - because JSON archaeology is so last season
  */
 
 import { useState, useCallback } from "react";
@@ -22,6 +23,18 @@ const setDeepValue = (obj, path, value) => {
   // Handle simple top-level updates
   if (parts.length === 1) {
     return { ...obj, [parts[0]]: value };
+  }
+
+  // Handle extended_parameters specially
+  if (parts[0] === "extended_parameters" || parts[0] === "extendedParameters") {
+    const paramName = parts.slice(1).join(".");
+    return {
+      ...obj,
+      extendedParameters: {
+        ...obj.extendedParameters,
+        [paramName]: value,
+      },
+    };
   }
 
   // Clone the top level
@@ -53,6 +66,13 @@ const setDeepValue = (obj, path, value) => {
  */
 const getDeepValue = (obj, path) => {
   const parts = path.split(".");
+
+  // Handle extended_parameters specially
+  if (parts[0] === "extended_parameters" || parts[0] === "extendedParameters") {
+    const paramName = parts.slice(1).join(".");
+    return obj.extendedParameters?.[paramName];
+  }
+
   let value = obj;
 
   for (const part of parts) {
@@ -113,6 +133,8 @@ export function useForm(initialMetadata = null) {
       // Auto-parse numbers
       const numValue = parseFloat(value);
       finalValue = isNaN(numValue) ? value : numValue;
+    } else if (type === "checkbox") {
+      finalValue = e.target.checked;
     } else {
       finalValue = value;
     }
@@ -228,6 +250,35 @@ export function useForm(initialMetadata = null) {
   }, []);
 
   /**
+   * Update an extended parameter (new typed parameter system)
+   *
+   * @param {string} name Parameter name (without 'extended_parameters.' prefix)
+   * @param {*} value The new value
+   */
+  const updateExtendedParameter = useCallback((name, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      extendedParameters: {
+        ...prev.extendedParameters,
+        [name]: value,
+      },
+    }));
+  }, []);
+
+  /**
+   * Get an extended parameter value
+   *
+   * @param {string} name Parameter name
+   * @returns {*} The parameter value
+   */
+  const getExtendedParameter = useCallback(
+    (name) => {
+      return formData.extendedParameters?.[name];
+    },
+    [formData]
+  );
+
+  /**
    * Check if form has any data
    */
   const hasData = useCallback(() => {
@@ -257,6 +308,8 @@ export function useForm(initialMetadata = null) {
     resetFormWithMetadata,
     updateSection,
     bulkUpdate,
+    updateExtendedParameter,
+    getExtendedParameter,
     hasData,
   };
 }
