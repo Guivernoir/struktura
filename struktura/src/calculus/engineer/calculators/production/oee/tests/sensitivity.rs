@@ -25,7 +25,7 @@ fn test_sensitivity_analysis_runs() {
 
 #[test]
 fn test_downtime_sensitivity() {
-    let cycle_time = 25;
+    let cycle_time = 20;
     let running_hours = 6;
     let theoretical = (running_hours * 3600 / cycle_time) as u32;
     
@@ -57,14 +57,14 @@ fn test_downtime_sensitivity() {
 
 #[test]
 fn test_cycle_time_sensitivity() {
-    let cycle_time = 30;
+    let cycle_time = 28;
     let running_hours = 7;
-    let theoretical = (running_hours * 3600 / cycle_time) as u32; // 840 units
+    let theoretical = (running_hours * 3600 / cycle_time) as u32; // 900 units
     
     let input = TestFixture::basic()
         .with_time_allocations(running_hours, 1)
         .with_production(theoretical, theoretical, 0, 0)
-        .with_cycle_time(cycle_time, None) // 30 seconds (slower)
+        .with_cycle_time(cycle_time, None) // 28 seconds
         .build();
     
     let result = calculate_oee(input.clone()).expect("Calculation should succeed");
