@@ -52,7 +52,7 @@ pub fn calculate_extended_metrics_from_input(
         confidence.clone(),
     );
     
-    // MTBF/MTTR (illustrative - would need failure classification)
+    // MTBF/MTTR 
     let failure_count = count_failures(&input.downtimes);
     let mtbf = domain::extended::calculate_mtbf(operating_time, failure_count, confidence.clone());
     
@@ -80,9 +80,7 @@ fn count_failures(downtimes: &crate::calculus::engineer::calculators::production
         .records
         .iter()
         .filter(|r| {
-            r.reason.root()
-                .map(|s| s.to_lowercase().contains("failure") || s.to_lowercase().contains("breakdown"))
-                .unwrap_or(false)
+            r.reason.is_failure
         })
         .count() as u32
 }
@@ -93,9 +91,7 @@ fn calculate_repair_time(downtimes: &crate::calculus::engineer::calculators::pro
         .records
         .iter()
         .filter(|r| {
-            r.reason.root()
-                .map(|s| s.to_lowercase().contains("failure") || s.to_lowercase().contains("breakdown"))
-                .unwrap_or(false)
+            r.reason.is_failure
         })
         .map(|r| *r.duration.value())
         .sum()
