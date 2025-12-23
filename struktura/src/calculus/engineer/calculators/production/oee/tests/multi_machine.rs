@@ -14,6 +14,7 @@ use crate::calculus::engineer::calculators::production::oee::{
     OeeResult,
 };
 
+/// Create machine data with proper integer arithmetic to avoid rounding issues
 fn create_machine_data(
     machine_id: &str,
     availability: f64,
@@ -21,27 +22,32 @@ fn create_machine_data(
     quality: f64,
 ) -> MachineOeeData {
     // Calculate realistic production based on time and cycle time
-    let planned_hours = 8.0;
-    let running_hours = planned_hours * availability;
-    let downtime_hours = planned_hours - running_hours;
+    // Use integer hours to avoid time allocation gaps
+    let planned_hours = 8u64;
+    let running_hours = (planned_hours as f64 * availability).round() as u64;
+    let downtime_hours = planned_hours.saturating_sub(running_hours);
     
     // Ideal cycle time: 25 seconds
-    let ideal_cycle_secs = 25.0;
-    let running_seconds = running_hours * 3600.0;
+    let ideal_cycle_secs = 25u64;
+    let running_seconds = running_hours * 3600;
     
-    // Theoretical max units at ideal cycle time
-    let theoretical_max = (running_seconds / ideal_cycle_secs).floor() as u32;
+    // Theoretical max units at ideal cycle time (integer division)
+    let theoretical_max = running_seconds / ideal_cycle_secs;
     
     // Actual production considering performance
-    let actual_total = (theoretical_max as f64 * performance).floor() as u32;
+    // Use floor to ensure we don't exceed theoretical max
+    let actual_total = ((theoretical_max as f64 * performance).floor() as u32).min(theoretical_max as u32);
     
     // Apply quality to get good/scrap split
+    // Critical: Use subtraction to ensure good + scrap = total exactly
     let good_units = (actual_total as f64 * quality).floor() as u32;
-    let scrap_units = actual_total - good_units;
+    let scrap_units = actual_total.saturating_sub(good_units);
     
+    // Create downtime record to match downtime allocation
     let input = TestFixture::basic()
-        .with_time_allocations(running_hours as u64, downtime_hours as u64)
+        .with_time_allocations(running_hours, downtime_hours)
         .with_production(actual_total, good_units, scrap_units, 0)
+        .with_downtime(downtime_hours * 3600, true) // Add corresponding downtime record
         .build();
     
     let result = calculate_oee(input).expect("Should create machine result");

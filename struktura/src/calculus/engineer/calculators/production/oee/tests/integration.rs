@@ -97,17 +97,22 @@ fn test_oee_with_economics_workflow() {
 
 #[test]
 fn test_multi_machine_complete_workflow() {
-    // Create results for 3 machines
+    // Create results for 3 machines with proper integer arithmetic
     let machines = vec![
         {
-            let cycle_time = 25;
-            let running_hours = 7;
-            let theoretical = (running_hours * 3600 / cycle_time) as u32;
-            let actual = (theoretical as f64 * 0.95) as u32; // 95% performance
+            let cycle_time = 25u64;
+            let running_hours = 7u64;
+            let theoretical = (running_hours * 3600 / cycle_time) as u32; // 1008 units
+            let actual = (theoretical as f64 * 0.95).floor() as u32; // 957 units
+            
+            // Ensure good + scrap = total exactly
+            let good = (actual as f64 * 0.95).floor() as u32;
+            let scrap = actual.saturating_sub(good);
             
             let input = TestFixture::basic()
                 .with_time_allocations(running_hours, 1)
-                .with_production(actual, (actual as f64 * 0.95) as u32, (actual as f64 * 0.05) as u32, 0)
+                .with_production(actual, good, scrap, 0)
+                .with_downtime(3600, true) // Add corresponding downtime record
                 .build();
             let result = calculate_oee(input).expect("Machine 1 calc");
             MachineOeeData {
@@ -119,14 +124,19 @@ fn test_multi_machine_complete_workflow() {
             }
         },
         {
-            let cycle_time = 25;
-            let running_hours = 5; // More downtime
-            let theoretical = (running_hours * 3600 / cycle_time) as u32;
-            let actual = (theoretical as f64 * 0.90) as u32;
+            let cycle_time = 25u64;
+            let running_hours = 5u64; // More downtime
+            let theoretical = (running_hours * 3600 / cycle_time) as u32; // 720 units
+            let actual = (theoretical as f64 * 0.90).floor() as u32; // 648 units
+            
+            // Ensure good + scrap = total exactly
+            let good = (actual as f64 * 0.80).floor() as u32;
+            let scrap = actual.saturating_sub(good);
             
             let input = TestFixture::basic()
                 .with_time_allocations(running_hours, 3)
-                .with_production(actual, (actual as f64 * 0.80) as u32, (actual as f64 * 0.20) as u32, 0)
+                .with_production(actual, good, scrap, 0)
+                .with_downtime(3 * 3600, true) // Add corresponding downtime record
                 .build();
             let result = calculate_oee(input).expect("Machine 2 calc");
             MachineOeeData {
@@ -138,14 +148,19 @@ fn test_multi_machine_complete_workflow() {
             }
         },
         {
-            let cycle_time = 25;
-            let running_hours = 7;
-            let theoretical = (running_hours * 3600 / cycle_time) as u32;
-            let actual = (theoretical as f64 * 0.98) as u32;
+            let cycle_time = 25u64;
+            let running_hours = 7u64;
+            let theoretical = (running_hours * 3600 / cycle_time) as u32; // 1008 units
+            let actual = (theoretical as f64 * 0.98).floor() as u32; // 988 units
+            
+            // Ensure good + scrap = total exactly
+            let good = (actual as f64 * 0.97).floor() as u32;
+            let scrap = actual.saturating_sub(good);
             
             let input = TestFixture::basic()
                 .with_time_allocations(running_hours, 1)
-                .with_production(actual, (actual as f64 * 0.97) as u32, (actual as f64 * 0.03) as u32, 0)
+                .with_production(actual, good, scrap, 0)
+                .with_downtime(3600, true) // Add corresponding downtime record
                 .build();
             let result = calculate_oee(input).expect("Machine 3 calc");
             MachineOeeData {

@@ -181,6 +181,7 @@ fn analyze_planned_time_sensitivity(
 }
 
 /// Analyze downtime sensitivity (-10% reduction)
+/// FIXED: Properly transfers saved downtime back to running time
 fn analyze_downtime_sensitivity(
     input: &OeeInput,
     baseline_metrics: &CoreMetrics,
@@ -192,13 +193,33 @@ fn analyze_downtime_sensitivity(
     
     let mut modified_input = input.clone();
     
-    // Scale all downtime allocations proportionally
-    let scale_factor = varied_value / baseline_value;
+    // Calculate time saved by reducing downtime
+    let scale_factor = if baseline_value > 0.0 {
+        varied_value / baseline_value
+    } else {
+        1.0
+    };
+    
+    let mut running_time_addition = Duration::ZERO;
+    
+    // Scale all downtime allocations proportionally and accumulate saved time
     for allocation in &mut modified_input.time_model.allocations {
         if allocation.state != crate::calculus::engineer::calculators::production::oee::assumptions::MachineState::Running {
             let current = *allocation.duration.value();
             let new_duration = Duration::from_secs_f64(current.as_secs_f64() * scale_factor);
+            let saved = current.saturating_sub(new_duration);
+            running_time_addition += saved;
             allocation.duration = crate::calculus::engineer::calculators::production::oee::assumptions::InputValue::Inferred(new_duration);
+        }
+    }
+    
+    // Add saved time to running time (critical fix)
+    for allocation in &mut modified_input.time_model.allocations {
+        if allocation.state == crate::calculus::engineer::calculators::production::oee::assumptions::MachineState::Running {
+            let current = *allocation.duration.value();
+            let new_duration = current + running_time_addition;
+            allocation.duration = crate::calculus::engineer::calculators::production::oee::assumptions::InputValue::Inferred(new_duration);
+            break;
         }
     }
     
@@ -229,6 +250,7 @@ fn analyze_downtime_sensitivity(
 }
 
 /// Analyze cycle time sensitivity (-10% improvement)
+/// FIXED: Recalculates theoretical production at improved cycle time
 fn analyze_cycle_time_sensitivity(
     input: &OeeInput,
     baseline_metrics: &CoreMetrics,
@@ -242,6 +264,40 @@ fn analyze_cycle_time_sensitivity(
     let new_duration = Duration::from_secs_f64(varied_value);
     modified_input.cycle_time.ideal_cycle_time = 
         crate::calculus::engineer::calculators::production::oee::assumptions::InputValue::Explicit(new_duration);
+    
+    // Critical fix: With faster cycle time, theoretical capacity increases
+    // Recalculate what production would be at the improved cycle time
+    let running_time = modified_input.time_model.running_time();
+    let new_theoretical_max = if varied_value > 0.0 {
+        (running_time.as_secs_f64() / varied_value).floor() as u32
+    } else {
+        0
+    };
+    
+    // Scale production proportionally (maintaining same performance and quality rates)
+    let old_total = *input.production.total_units.value();
+    let production_ratio = if old_total > 0 {
+        new_theoretical_max as f64 / old_total as f64
+    } else {
+        1.0
+    };
+    
+    // Apply ratio to all production counts (but cap at theoretical max)
+    let new_total = (old_total as f64 * production_ratio).floor().min(new_theoretical_max as f64) as u32;
+    let quality_rate = if old_total > 0 {
+        *input.production.good_units.value() as f64 / old_total as f64
+    } else {
+        1.0
+    };
+    let new_good = (new_total as f64 * quality_rate).floor() as u32;
+    let new_scrap = new_total.saturating_sub(new_good);
+    
+    modified_input.production.total_units = 
+        crate::calculus::engineer::calculators::production::oee::assumptions::InputValue::Inferred(new_total);
+    modified_input.production.good_units = 
+        crate::calculus::engineer::calculators::production::oee::assumptions::InputValue::Inferred(new_good);
+    modified_input.production.scrap_units = 
+        crate::calculus::engineer::calculators::production::oee::assumptions::InputValue::Inferred(new_scrap);
     
     let modified_metrics = calculate_core_metrics_from_input(
         &modified_input,
@@ -331,7 +387,7 @@ fn analyze_good_units_sensitivity(
     let new_good = varied_value as u32;
     
     // Reduce scrap correspondingly
-    let increase = new_good - *input.production.good_units.value();
+    let increase = new_good.saturating_sub(*input.production.good_units.value());
     let new_scrap = input.production.scrap_units.value().saturating_sub(increase);
     
     modified_input.production.good_units = 
@@ -379,7 +435,7 @@ fn analyze_scrap_sensitivity(
     let new_scrap = varied_value as u32;
     
     // Add difference to good units
-    let scrap_reduction = *input.production.scrap_units.value() - new_scrap;
+    let scrap_reduction = input.production.scrap_units.value().saturating_sub(new_scrap);
     let new_good = *input.production.good_units.value() + scrap_reduction;
     
     modified_input.production.scrap_units = 
