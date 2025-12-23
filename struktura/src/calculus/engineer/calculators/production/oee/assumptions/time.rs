@@ -1,6 +1,7 @@
-//! Time allocation assumptions
+//! Time allocation assumptions (with TEEP support)
 //! 
 //! How the analyst has partitioned the analysis window into states.
+//! Now includes optional all_time for TEEP calculation.
 
 use super::*;
 
@@ -40,9 +41,33 @@ impl TimeAllocation {
 pub struct TimeModel {
     pub planned_production_time: InputValue<Duration>,
     pub allocations: Vec<TimeAllocation>,
+    /// Optional: Total calendar time for TEEP calculation (e.g., 24/7 time)
+    /// If provided, enables TEEP metric
+    pub all_time: Option<InputValue<Duration>>,
 }
 
 impl TimeModel {
+    /// Create with planned time only
+    pub fn new(planned_production_time: InputValue<Duration>) -> Self {
+        Self {
+            planned_production_time,
+            allocations: Vec::new(),
+            all_time: None,
+        }
+    }
+    
+    /// Create with TEEP support (includes all_time)
+    pub fn with_teep_support(
+        planned_production_time: InputValue<Duration>,
+        all_time: InputValue<Duration>,
+    ) -> Self {
+        Self {
+            planned_production_time,
+            allocations: Vec::new(),
+            all_time: Some(all_time),
+        }
+    }
+    
     /// Get total allocated time
     pub fn total_allocated(&self) -> Duration {
         self.allocations
@@ -84,5 +109,28 @@ impl TimeModel {
             .filter(|a| a.state != MachineState::Running)
             .map(|a| *a.duration.value())
             .sum()
+    }
+    
+    /// Check if TEEP calculation is possible
+    pub fn supports_teep(&self) -> bool {
+        self.all_time.is_some()
+    }
+    
+    /// Get all_time for TEEP calculation
+    pub fn get_all_time(&self) -> Option<Duration> {
+        self.all_time.as_ref().map(|t| *t.value())
+    }
+    
+    /// Calculate loading factor (for TEEP)
+    /// Loading Factor = Operating Time / All Time
+    pub fn loading_factor(&self) -> Option<f64> {
+        let all_time = self.get_all_time()?;
+        let all_secs = all_time.as_secs_f64();
+        
+        if all_secs > 0.0 {
+            Some(self.running_time().as_secs_f64() / all_secs)
+        } else {
+            None
+        }
     }
 }

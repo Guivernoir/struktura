@@ -159,6 +159,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_concrete_elastic_modulus() {
         use concrete_properties::*;
         

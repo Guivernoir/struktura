@@ -333,6 +333,8 @@ UX: Immediate feedback, interrogation flags.
 │   ├── leverage.rs
 │   ├── mod.rs
 │   ├── oee.rs
+│   ├── temporal_scrap.rs
+│   ├── multi_machine.rs
 │   └── sensitivity.rs
 ├── ledger
 │   ├── assumption_tracking.rs

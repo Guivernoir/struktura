@@ -7,6 +7,8 @@ pub mod decomposition;
 pub mod leverage;
 pub mod oee;
 pub mod sensitivity;
+pub mod temporal_scrap;
+pub mod multi_machine;
 
 use crate::calculus::engineer::calculators::production::oee::{
     domain::{self, Confidence, ValueSource},

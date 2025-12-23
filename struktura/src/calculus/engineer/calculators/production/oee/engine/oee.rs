@@ -1,6 +1,7 @@
-//! OEE metric calculations
+//! OEE metric calculations (with TEEP support)
 //! 
 //! Bridge between input structures and domain calculations.
+//! Now includes proper TEEP calculation when all_time is provided.
 
 use crate::calculus::engineer::calculators::production::oee::{
     assumptions::{cycle::CycleTimeModel, counts::ProductionSummary, time::TimeModel},
@@ -40,11 +41,21 @@ pub fn calculate_extended_metrics_from_input(
     let scrap_count = *input.production.scrap_units.value();
     let rework_count = *input.production.reworked_units.value();
     
-    // Calculate performance and quality for TEEP (reuse from core)
+    // Calculate core metrics for TEEP
     let core = calculate_core_metrics_from_input(input, confidence.clone());
     
-    // TEEP calculation (if we have all-time context)
-    let teep = None; // Would need all_time parameter in input
+    // TEEP calculation (if we have all_time)
+    let teep = if let Some(all_time) = input.time_model.get_all_time() {
+        domain::extended::calculate_teep(
+            operating_time,
+            all_time,
+            &core.performance,
+            &core.quality,
+            confidence.clone(),
+        )
+    } else {
+        None
+    };
     
     let utilization = domain::extended::calculate_utilization(
         operating_time,
@@ -74,7 +85,7 @@ pub fn calculate_extended_metrics_from_input(
     }
 }
 
-/// Count failures in downtime records (simple heuristic: root reason contains "failure")
+/// Count failures in downtime records 
 fn count_failures(downtimes: &crate::calculus::engineer::calculators::production::oee::assumptions::downtime::DowntimeCollection) -> u32 {
     downtimes
         .records

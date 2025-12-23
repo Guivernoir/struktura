@@ -9,6 +9,7 @@ pub mod domain;
 pub mod engine;
 pub mod ledger;
 pub mod validation;
+pub mod tests;
 
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
