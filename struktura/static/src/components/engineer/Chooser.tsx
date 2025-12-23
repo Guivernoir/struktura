@@ -1,257 +1,226 @@
-// Chooser.tsx
-import React from "react";
+/**
+ * Calculator Chooser Component
+ * 
+ * A visual selector for engineering calculators.
+ * Filters by category, shows complexity, looks professional.
+ * 
+ * Design philosophy: Users should see all options immediately,
+ * not hunt through dropdowns like it's 2005.
+ */
 
-interface ChooserProps {
-  t: any;
-  theme: string;
-  categories: string[];
-  selectedCategory: string | null;
-  setSelectedCategory: (cat: string) => void;
-  calculators: { id: string; title: string }[];
-  selectedCalculator: string | null;
-  setSelectedCalculator: (calc: string) => void;
-  calculatorMetadata: {
-    parameters: { name: string; type: string; unit?: string; }[];
-  } | null;
-  formData: Record<string, string>;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  outputFormat: string;
-  setOutputFormat: (format: string) => void;
-  handleCalculate: () => void;
-  results: { key: string; value: number; unit?: string }[];
-  warnings: string[];
-  structuredWarnings: any;
-  recommendations: string[];
-  isLoading: boolean;
-  error: string | null;
-  show3D: boolean;
+import { useState, useMemo } from "react";
+import { CalculatorId, CalculatorDefinition } from "../../pages/EngineerCalculator";
+import Icon from "./Icon";
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+interface CalculatorChooserProps {
+  calculators: CalculatorDefinition[];
+  onSelect: (id: CalculatorId) => void;
   getLabel: (key: string) => string;
 }
 
-const Chooser: React.FC<ChooserProps> = ({
-  t,
-  theme,
-  categories,
-  selectedCategory,
-  setSelectedCategory,
+// ============================================================================
+// Category Configuration - The Organizational Schema
+// ============================================================================
+
+const CATEGORIES = [
+  { id: 'all', nameKey: 'engineer.categories.all', icon: 'Grid3x3' },
+  { id: 'production', nameKey: 'engineer.categories.production', icon: 'Activity' },
+  { id: 'structural', nameKey: 'engineer.categories.structural', icon: 'Columns' },
+  { id: 'materials', nameKey: 'engineer.categories.materials', icon: 'Box' },
+  { id: 'geotechnical', nameKey: 'engineer.categories.geotechnical', icon: 'Mountain' },
+  { id: 'mechanical', nameKey: 'engineer.categories.mechanical', icon: 'Wind' },
+] as const;
+
+/**
+ * Complexity badge configuration
+ * Color-coded because humans are visual creatures
+ */
+const COMPLEXITY_STYLES = {
+  basic: {
+    bg: 'bg-green-100 dark:bg-green-950/50',
+    text: 'text-green-800 dark:text-green-300',
+    border: 'border-green-200 dark:border-green-800',
+    label: 'Basic',
+  },
+  intermediate: {
+    bg: 'bg-amber-100 dark:bg-amber-950/50',
+    text: 'text-amber-800 dark:text-amber-300',
+    border: 'border-amber-200 dark:border-amber-800',
+    label: 'Intermediate',
+  },
+  advanced: {
+    bg: 'bg-red-100 dark:bg-red-950/50',
+    text: 'text-red-800 dark:text-red-300',
+    border: 'border-red-200 dark:border-red-800',
+    label: 'Advanced',
+  },
+} as const;
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+const CalculatorChooser: React.FC<CalculatorChooserProps> = ({
   calculators,
-  selectedCalculator,
-  setSelectedCalculator,
-  calculatorMetadata,
-  formData,
-  handleInputChange,
-  outputFormat,
-  setOutputFormat,
-  handleCalculate,
-  results,
-  warnings,
-  structuredWarnings,
-  recommendations,
-  isLoading,
-  error,
-  show3D,
+  onSelect,
   getLabel,
 }) => {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  /**
+   * Filter calculators by category and search query
+   * Memoized because we're not savages who re-filter on every render
+   */
+  const filteredCalculators = useMemo(() => {
+    let filtered = calculators;
+
+    // Category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(calc => calc.category === selectedCategory);
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(calc =>
+        getLabel(calc.nameKey).toLowerCase().includes(query) ||
+        getLabel(calc.descriptionKey).toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [calculators, selectedCategory, searchQuery, getLabel]);
+
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
-      {/* Left Column: Selections and Form */}
-      <div className="lg:col-span-1">
-        <div className="bg-white dark:bg-charcoal-900 rounded-2xl shadow-xl border border-sand-200 dark:border-charcoal-800 p-6 sticky top-24">
-          <h2 className="text-xl font-semibold text-charcoal-900 dark:text-white mb-6">
-            {getLabel("engineer.form.title")}
-          </h2>
-
-          {/* Category Selector */}
-          <select
-            value={selectedCategory || ""}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full mb-6 p-3 bg-white dark:bg-charcoal-800 border border-sand-200 dark:border-charcoal-700 rounded-lg text-charcoal-900 dark:text-steel-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          >
-            <option value="">{getLabel("engineer.select_category") || "Select Category"}</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {getLabel(`categories.${cat}`)}
-              </option>
-            ))}
-          </select>
-
-          {/* Calculator Selector */}
-          {selectedCategory && (
-            <select
-              value={selectedCalculator || ""}
-              onChange={(e) => setSelectedCalculator(e.target.value)}
-              className="w-full mb-6 p-3 bg-white dark:bg-charcoal-800 border border-sand-200 dark:border-charcoal-700 rounded-lg text-charcoal-900 dark:text-steel-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            >
-              <option value="">{getLabel("engineer.select_calculator") || "Select Calculator"}</option>
-              {calculators.map((calc) => (
-                <option key={calc.id} value={calc.id}>
-                  {getLabel(`calculators.${calc.id}.title`)}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* Output Format Selector */}
-          {selectedCalculator && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2 text-charcoal-700 dark:text-steel-300">
-                {getLabel("engineer.output_format.label") || "Output Format"}
-              </label>
-              <select
-                value={outputFormat}
-                onChange={(e) => setOutputFormat(e.target.value)}
-                className="w-full p-3 bg-white dark:bg-charcoal-800 border border-sand-200 dark:border-charcoal-700 rounded-lg text-charcoal-900 dark:text-steel-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              >
-                <option value="standard">{getLabel("engineer.output_format.standard")}</option>
-                <option value="detailed">{getLabel("engineer.output_format.detailed")}</option>
-                <option value="summary">{getLabel("engineer.output_format.summary")}</option>
-              </select>
-            </div>
-          )}
-
-          {/* Dynamic Form */}
-          {selectedCalculator && calculatorMetadata && calculatorMetadata.parameters && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleCalculate();
-              }}
-            >
-              {calculatorMetadata.parameters.map((param) => (
-                <div key={param.name} className="mb-4">
-                  <label className="block text-sm font-medium mb-2 text-charcoal-700 dark:text-steel-300">
-                    {getLabel(`calculators.${selectedCalculator}.${param.name}`)}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={param.type === "number" ? "number" : "text"}
-                      name={param.name}
-                      value={formData[param.name] || ""}
-                      onChange={handleInputChange}
-                      className="w-full p-3 bg-white dark:bg-charcoal-800 border border-sand-200 dark:border-charcoal-700 rounded-lg text-charcoal-900 dark:text-steel-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      placeholder={getLabel(`calculators.${selectedCalculator}.${param.name}.placeholder`) || ""}
-                    />
-                    {param.unit && (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-charcoal-500 dark:text-steel-500">
-                        {param.unit}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-red-600 to-rose-600 text-white font-medium py-3 px-4 rounded-lg hover:from-red-700 hover:to-rose-700 disabled:opacity-50 transition-colors"
-              >
-                {isLoading ? getLabel("engineer.calculating") : getLabel("engineer.calculate")}
-              </button>
-            </form>
-          )}
-
-          {error && (
-            <p className="mt-4 text-red-600 dark:text-red-400">{error}</p>
-          )}
-
-          {!show3D && selectedCalculator && (
-            <div className="mt-6 p-3 rounded-lg bg-sand-100 dark:bg-charcoal-800 border border-sand-200 dark:border-charcoal-700">
-              <span className="text-xs text-charcoal-500 dark:text-steel-400">
-                {getLabel("engineer.visualization.unavailable")}
-              </span>
-            </div>
-          )}
+    <div className="space-y-8">
+      {/* Search Bar - Because Finding Things Should Be Easy */}
+      <div className="max-w-2xl mx-auto">
+        <div className="relative">
+          <Icon
+            name="Search"
+            size={20}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal-400 dark:text-steel-500"
+          />
+          <input
+            type="text"
+            placeholder="Search calculators..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-charcoal-900 border border-sand-200 dark:border-charcoal-800 rounded-xl text-charcoal-900 dark:text-white placeholder-charcoal-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+          />
         </div>
       </div>
 
-      {/* Right Column: Visualization & Results */}
-      <div className="lg:col-span-1 space-y-8">
-        {/* Visualization Panel */}
-        {show3D && selectedCalculator && (
-          <div className="bg-white dark:bg-charcoal-900 rounded-2xl shadow-xl border border-sand-200 dark:border-charcoal-800 p-6">
-            <h2 className="text-xl font-semibold text-charcoal-900 dark:text-white mb-4">
-              {getLabel("engineer.visualization.title")}
-            </h2>
-            <div className="h-96 bg-sand-50 dark:bg-charcoal-800 rounded-lg flex items-center justify-center text-charcoal-500 dark:text-steel-400">
-              <p>3D Visualization Placeholder</p>
-            </div>
-          </div>
-        )}
-
-        {/* Results Panel */}
-        {(results.length > 0 || warnings.length > 0 || recommendations.length > 0) && (
-          <div className="bg-white dark:bg-charcoal-900 rounded-2xl shadow-xl border border-sand-200 dark:border-charcoal-800 p-6">
-            <h2 className="text-xl font-semibold text-charcoal-900 dark:text-white mb-6">
-              {getLabel("engineer.results.title") || "Results"}
-            </h2>
-
-            {results.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3 text-charcoal-800 dark:text-steel-200">
-                  {getLabel("engineer.results.calculations") || "Calculations"}
-                </h3>
-                <div className="space-y-2">
-                  {results.map((res, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center border-b border-sand-100 dark:border-charcoal-700 pb-2"
-                    >
-                      <span className="text-charcoal-700 dark:text-steel-300">
-                        {getLabel(res.key)}
-                      </span>
-                      <span className="font-medium text-charcoal-900 dark:text-white">
-                        {res.value} {res.unit || ""}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {warnings.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3 text-yellow-700 dark:text-yellow-300">
-                  {getLabel("engineer.results.warnings") || "Warnings"}
-                </h3>
-                <ul className="space-y-2">
-                  {warnings.map((w, i) => (
-                    <li key={i} className="text-sm text-yellow-600 dark:text-yellow-400">
-                      {w}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {structuredWarnings && (
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3 text-yellow-700 dark:text-yellow-300">
-                  {getLabel("engineer.results.structured_warnings") || "Detailed Warnings"}
-                </h3>
-                <pre className="bg-sand-50 dark:bg-charcoal-800 p-3 rounded-lg text-sm overflow-auto">
-                  {JSON.stringify(structuredWarnings, null, 2)}
-                </pre>
-              </div>
-            )}
-
-            {recommendations.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium mb-3 text-green-700 dark:text-green-300">
-                  {getLabel("engineer.results.recommendations") || "Recommendations"}
-                </h3>
-                <ul className="space-y-2">
-                  {recommendations.map((r, i) => (
-                    <li key={i} className="text-sm text-green-600 dark:text-green-400">
-                      {r}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
+      {/* Category Tabs - Visual Filtering */}
+      <div className="flex flex-wrap gap-2 justify-center">
+        {CATEGORIES.map(category => (
+          <button
+            key={category.id}
+            onClick={() => setSelectedCategory(category.id)}
+            className={`
+              inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all
+              ${selectedCategory === category.id
+                ? 'bg-red-600 text-white shadow-lg shadow-red-500/30'
+                : 'bg-white dark:bg-charcoal-900 text-charcoal-700 dark:text-steel-300 border border-sand-200 dark:border-charcoal-800 hover:border-red-300 dark:hover:border-red-700'
+              }
+            `}
+          >
+            <Icon
+              name={category.icon}
+              size={16}
+            />
+            <span>{getLabel(category.nameKey)}</span>
+          </button>
+        ))}
       </div>
+
+      {/* Results Count - Situational Awareness */}
+      {searchQuery.trim() && (
+        <div className="text-center text-sm text-charcoal-600 dark:text-steel-400">
+          Found {filteredCalculators.length} calculator{filteredCalculators.length !== 1 ? 's' : ''}
+        </div>
+      )}
+
+      {/* Calculator Grid - The Main Event */}
+      {filteredCalculators.length > 0 ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCalculators.map(calculator => {
+            const complexityStyle = COMPLEXITY_STYLES[calculator.complexity];
+            
+            return (
+              <button
+                key={calculator.id}
+                onClick={() => onSelect(calculator.id)}
+                className="group relative bg-white dark:bg-charcoal-900 rounded-xl border-2 border-sand-200 dark:border-charcoal-800 hover:border-red-500 dark:hover:border-red-500 p-6 text-left transition-all hover:shadow-xl hover:shadow-red-500/10 hover:-translate-y-1"
+              >
+                {/* Icon Badge */}
+                <div className="mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Icon
+                      name={calculator.icon}
+                      size={24}
+                      className="text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Calculator Name */}
+                <h3 className="text-lg font-bold text-charcoal-900 dark:text-white mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                  {getLabel(calculator.nameKey)}
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm text-charcoal-600 dark:text-steel-400 mb-4 line-clamp-2">
+                  {getLabel(calculator.descriptionKey)}
+                </p>
+
+                {/* Complexity Badge */}
+                <div className="flex items-center gap-2">
+                  <span className={`
+                    inline-flex items-center px-2 py-1 rounded text-xs font-medium border
+                    ${complexityStyle.bg} ${complexityStyle.text} ${complexityStyle.border}
+                  `}>
+                    {complexityStyle.label}
+                  </span>
+                </div>
+
+                {/* Hover Arrow */}
+                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Icon
+                    name="ArrowRight"
+                    size={20}
+                    className="text-red-600 dark:text-red-400"
+                  />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        // Empty State - When The Search Fails
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 bg-sand-100 dark:bg-charcoal-800 rounded-full flex items-center justify-center">
+            <Icon
+              name="Search"
+              size={32}
+              className="text-charcoal-400 dark:text-steel-500"
+            />
+          </div>
+          <h3 className="text-xl font-semibold text-charcoal-900 dark:text-white mb-2">
+            No calculators found
+          </h3>
+          <p className="text-charcoal-600 dark:text-steel-400">
+            Try adjusting your search or category filter
+          </p>
+        </div>
+      )}
     </div>
   );
 };
 
-export default Chooser;
+export default CalculatorChooser;

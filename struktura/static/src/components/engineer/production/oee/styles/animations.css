@@ -1,0 +1,402 @@
+/**
+ * Animation Definitions
+ * 
+ * Custom animations matching the Tailwind config.
+ * Used for smooth transitions and visual feedback.
+ */
+
+/* ============================================================================
+   Keyframe Definitions
+   ============================================================================ */
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  0% {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideLeft {
+  0% {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ============================================================================
+   Animation Classes
+   ============================================================================ */
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.6s ease-out;
+}
+
+.animate-slide-left {
+  animation: slideLeft 0.6s ease-out;
+}
+
+.animate-slide-right {
+  animation: slideRight 0.6s ease-out;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out 3s infinite;
+}
+
+.animate-ticker {
+  animation: ticker 40s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* ============================================================================
+   OEE-Specific Animations
+   ============================================================================ */
+
+/* Metric value update animation */
+@keyframes metricUpdate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+    color: var(--color-steel-600);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-metric-update {
+  animation: metricUpdate 0.4s ease-in-out;
+}
+
+/* Calculation progress animation */
+@keyframes calculatePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+.animate-calculating {
+  animation: calculatePulse 1.5s ease-in-out infinite;
+}
+
+/* Loss tree expand animation */
+@keyframes expandLoss {
+  0% {
+    max-height: 0;
+    opacity: 0;
+  }
+  100% {
+    max-height: 500px;
+    opacity: 1;
+  }
+}
+
+.animate-expand-loss {
+  animation: expandLoss 0.3s ease-out;
+}
+
+/* Assumption highlight animation */
+@keyframes highlightAssumption {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--color-sand-100);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-highlight-assumption {
+  animation: highlightAssumption 1s ease-in-out;
+}
+
+/* Warning pulse animation */
+@keyframes warningPulse {
+  0%, 100% {
+    border-color: var(--color-oee-needs-improvement);
+    opacity: 1;
+  }
+  50% {
+    border-color: var(--color-sand-300);
+    opacity: 0.7;
+  }
+}
+
+.animate-warning-pulse {
+  animation: warningPulse 2s ease-in-out infinite;
+}
+
+/* ============================================================================
+   Transition Utilities
+   ============================================================================ */
+
+.transition-fast {
+  transition-duration: var(--transition-fast);
+  transition-timing-function: var(--ease-in-out);
+}
+
+.transition-base {
+  transition-duration: var(--transition-base);
+  transition-timing-function: var(--ease-in-out);
+}
+
+.transition-slow {
+  transition-duration: var(--transition-slow);
+  transition-timing-function: var(--ease-in-out);
+}
+
+.transition-slower {
+  transition-duration: var(--transition-slower);
+  transition-timing-function: var(--ease-in-out);
+}
+
+/* Specific property transitions */
+.transition-colors {
+  transition-property: color, background-color, border-color;
+  transition-duration: var(--transition-base);
+  transition-timing-function: var(--ease-in-out);
+}
+
+.transition-transform {
+  transition-property: transform;
+  transition-duration: var(--transition-base);
+  transition-timing-function: var(--ease-out);
+}
+
+.transition-opacity {
+  transition-property: opacity;
+  transition-duration: var(--transition-base);
+  transition-timing-function: var(--ease-in-out);
+}
+
+.transition-all {
+  transition-property: all;
+  transition-duration: var(--transition-base);
+  transition-timing-function: var(--ease-in-out);
+}
+
+/* ============================================================================
+   Hover & Focus Effects
+   ============================================================================ */
+
+.hover-lift {
+  transition: transform var(--transition-base) var(--ease-out),
+              box-shadow var(--transition-base) var(--ease-out);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.hover-lift:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-soft);
+}
+
+.hover-glow {
+  transition: box-shadow var(--transition-base) var(--ease-out);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ============================================================================
+   Loading States
+   ============================================================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-charcoal-200) 0%,
+    var(--color-charcoal-100) 50%,
+    var(--color-charcoal-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-charcoal-800) 0%,
+    var(--color-charcoal-700) 50%,
+    var(--color-charcoal-800) 100%
+  );
+}
+
+/* ============================================================================
+   Page Transitions
+   ============================================================================ */
+
+.page-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.page-exit {
+  opacity: 1;
+}
+
+.page-exit-active {
+  opacity: 0;
+  transition: opacity 0.2s;
+}

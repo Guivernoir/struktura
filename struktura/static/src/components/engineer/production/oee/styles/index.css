@@ -1,0 +1,24 @@
+/**
+ * OEE Calculator Styles - Main Entry Point
+ * 
+ * Import order matters:
+ * 1. Variables (custom properties)
+ * 2. Typography (base text styles)
+ * 3. Animations (keyframes and transitions)
+ * 4. OEE-specific components
+ * 
+ * Note: Tailwind's @tailwind directives should be in your main app CSS,
+ * not here. These are supplementary styles for the OEE component.
+ */
+
+/* Variables first - everything else depends on these */
+@import './variables.css';
+
+/* Typography - base text styling */
+@import './typography.css';
+
+/* Animations - used by components */
+@import './animations.css';
+
+/* OEE-specific component styles */
+@import './oee.css';

@@ -1,0 +1,207 @@
+/**
+ * CSS Custom Properties / Variables
+ * 
+ * Design tokens that match the Tailwind config.
+ * Use these for dynamic theming and consistency.
+ */
+
+:root {
+  /* ========================================================================
+     Color Palette - Sand (Warm Neutrals)
+     ======================================================================== */
+  --color-sand-50: #faf9f7;
+  --color-sand-100: #f4f1ed;
+  --color-sand-200: #e8e2d9;
+  --color-sand-300: #d6cbbf;
+  --color-sand-400: #bfad9b;
+  --color-sand-500: #a8927d;
+  --color-sand-600: #8f7966;
+  --color-sand-700: #776454;
+  --color-sand-800: #625347;
+  --color-sand-900: #53463d;
+
+  /* ========================================================================
+     Color Palette - Steel (Cool Neutrals)
+     ======================================================================== */
+  --color-steel-50: #f6f7f9;
+  --color-steel-100: #eceef2;
+  --color-steel-200: #d5dae2;
+  --color-steel-300: #b0bac9;
+  --color-steel-400: #8596ab;
+  --color-steel-500: #667790;
+  --color-steel-600: #516076;
+  --color-steel-700: #424e60;
+  --color-steel-800: #394251;
+  --color-steel-900: #333a45;
+
+  /* ========================================================================
+     Color Palette - Charcoal (Dark Neutrals)
+     ======================================================================== */
+  --color-charcoal-50: #f6f6f6;
+  --color-charcoal-100: #e7e7e7;
+  --color-charcoal-200: #d1d1d1;
+  --color-charcoal-300: #b0b0b0;
+  --color-charcoal-400: #888888;
+  --color-charcoal-500: #6d6d6d;
+  --color-charcoal-600: #5d5d5d;
+  --color-charcoal-700: #4f4f4f;
+  --color-charcoal-800: #454545;
+  --color-charcoal-900: #3d3d3d;
+  --color-charcoal-950: #1a1a1a;
+
+  /* ========================================================================
+     Semantic Colors for OEE
+     ======================================================================== */
+  /* OEE Value Ranges */
+  --color-oee-world-class: #10b981; /* OEE >= 85% - Green */
+  --color-oee-acceptable: #f59e0b;  /* OEE 60-84% - Amber */
+  --color-oee-needs-improvement: #ef4444; /* OEE < 60% - Red */
+
+  /* Metric Colors */
+  --color-availability: #3b82f6;  /* Blue */
+  --color-performance: #8b5cf6;   /* Purple */
+  --color-quality: #10b981;       /* Green */
+  --color-oee: --color-charcoal-800;
+
+  /* Confidence Levels */
+  --color-confidence-high: #10b981;   /* Green */
+  --color-confidence-medium: #f59e0b; /* Amber */
+  --color-confidence-low: #ef4444;    /* Red */
+
+  /* Input Source Types */
+  --color-source-explicit: #3b82f6;  /* Blue - User provided */
+  --color-source-inferred: #8b5cf6;  /* Purple - Calculated */
+  --color-source-default: #6b7280;   /* Gray - System default */
+
+  /* Loss Categories */
+  --color-loss-availability: #ef4444; /* Red */
+  --color-loss-performance: #f59e0b;  /* Amber */
+  --color-loss-quality: #fbbf24;      /* Yellow */
+
+  /* ========================================================================
+     Typography
+     ======================================================================== */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+
+  /* Font Sizes */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+
+  /* Font Weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* ========================================================================
+     Spacing
+     ======================================================================== */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  --spacing-3xl: 4rem;     /* 64px */
+
+  /* ========================================================================
+     Shadows
+     ======================================================================== */
+  --shadow-soft: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  --shadow-medium: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+  --shadow-hard: 0 20px 60px -15px rgba(0, 0, 0, 0.3);
+
+  /* ========================================================================
+     Border Radius
+     ======================================================================== */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.375rem;  /* 6px */
+  --radius-lg: 0.5rem;    /* 8px */
+  --radius-xl: 0.75rem;   /* 12px */
+  --radius-2xl: 1rem;     /* 16px */
+  --radius-full: 9999px;
+
+  /* ========================================================================
+     Transitions
+     ======================================================================== */
+  --transition-fast: 150ms;
+  --transition-base: 200ms;
+  --transition-slow: 300ms;
+  --transition-slower: 500ms;
+
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ========================================================================
+     Z-Index Scale
+     ======================================================================== */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 30;
+  --z-modal-backdrop: 40;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-tooltip: 70;
+
+  /* ========================================================================
+     Component-Specific Variables
+     ======================================================================== */
+  /* Cards */
+  --card-bg: white;
+  --card-border: var(--color-charcoal-200);
+  --card-shadow: var(--shadow-soft);
+  --card-radius: var(--radius-lg);
+  --card-padding: var(--spacing-lg);
+
+  /* Buttons */
+  --button-radius: var(--radius-md);
+  --button-padding-x: var(--spacing-md);
+  --button-padding-y: var(--spacing-sm);
+
+  /* Inputs */
+  --input-bg: white;
+  --input-border: var(--color-charcoal-300);
+  --input-border-focus: var(--color-steel-500);
+  --input-radius: var(--radius-md);
+  --input-padding-x: var(--spacing-md);
+  --input-padding-y: var(--spacing-sm);
+
+  /* Badges */
+  --badge-radius: var(--radius-full);
+  --badge-padding-x: var(--spacing-sm);
+  --badge-padding-y: var(--spacing-xs);
+}
+
+/* ============================================================================
+   Dark Mode Variables
+   ============================================================================ */
+.dark {
+  /* Invert semantic colors for dark mode */
+  --card-bg: var(--color-charcoal-900);
+  --card-border: var(--color-charcoal-700);
+  --input-bg: var(--color-charcoal-800);
+  --input-border: var(--color-charcoal-600);
+  --input-border-focus: var(--color-steel-400);
+
+  /* Adjust shadows for dark backgrounds */
+  --shadow-soft: 0 2px 15px -3px rgba(0, 0, 0, 0.3), 0 10px 20px -2px rgba(0, 0, 0, 0.2);
+  --shadow-medium: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+  --shadow-hard: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
+}

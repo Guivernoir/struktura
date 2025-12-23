@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import Icon from "../Icon";
-import ResultCard from "../engineer/ResultCard";
+import ResultCard from "./ResultCard";
 import ChartsView from "../engineer/ChartsView";
 import { WarningSeverity } from "../../lib";
 
