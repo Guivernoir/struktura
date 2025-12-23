@@ -3,6 +3,7 @@ use crate::calculus::engineer::{
     models::*,
     registry::EngineeringRegistry,
 };
+use crate::calculus::engineer::calculators::production::oee;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -231,6 +232,9 @@ pub fn create_router() -> Router<Arc<AppState>> {
         // System endpoints
         .route("/health", get(health_handler))
         .route("/stats", get(stats_handler))
+
+        // Transition from legacy to modern
+        .nest("/oee", oee::api::router())
 }
 
 /// Create router with default registry (convenience function)

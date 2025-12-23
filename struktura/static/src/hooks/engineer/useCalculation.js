@@ -2,6 +2,7 @@
  * @file hooks/engineer/useCalculation.js
  * @description Professional calculation execution and result management
  * Mission objective: Strategic operations with comprehensive result processing
+ * FIXED: Now accepts metadata for proper extended_parameters type inference
  */
 
 import { useState, useCallback } from "react";
@@ -17,6 +18,7 @@ export function useCalculation(
   selectedCalculator,
   formData,
   outputFormat,
+  calculatorMetadata, // FIXED: Added metadata parameter
   validateOrThrow
 ) {
   const [results, setResults] = useState([]);
@@ -43,7 +45,7 @@ export function useCalculation(
       // Pre-flight validation
       validateOrThrow();
 
-      // Build parameters using engineering helpers
+      // Build parameters using engineering helpers with metadata for type inference
       const params = EngineeringHelpers.createParameters({
         dimensions: formData.dimensions || {},
         material: formData.material,
@@ -55,6 +57,7 @@ export function useCalculation(
         humidity: formData.humidity,
         calculationDate: formData.calculationDate,
         extendedParameters: formData.extendedParameters || {},
+        parameterMetadata: calculatorMetadata?.parameters || [], // FIXED: Pass metadata
         additional: formData.additional,
         projectMetadata: formData.projectMetadata,
       });
@@ -94,7 +97,13 @@ export function useCalculation(
     } finally {
       setIsLoading(false);
     }
-  }, [selectedCalculator, formData, outputFormat, validateOrThrow]);
+  }, [
+    selectedCalculator,
+    formData,
+    outputFormat,
+    calculatorMetadata,
+    validateOrThrow,
+  ]);
 
   /**
    * Process and format calculation results

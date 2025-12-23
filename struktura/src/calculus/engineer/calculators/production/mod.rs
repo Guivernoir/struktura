@@ -8,7 +8,7 @@
 // Individual calculator modules
 pub mod conveyor_belt;
 pub mod line_balancing;
-pub mod oee_calculation;
+pub mod oee;
 pub mod inventory_optimization;
 pub mod capacity_planning;
 pub mod process_capability;
@@ -18,7 +18,6 @@ pub mod facility_layout;
 // Re-export calculators
 pub use conveyor_belt::ConveyorBeltCalculator;
 pub use line_balancing::ProductionLineBalancingCalculator;
-pub use oee_calculation::OEECalculator;
 pub use inventory_optimization::InventoryOptimizationCalculator;
 pub use capacity_planning::CapacityPlanningCalculator;
 pub use process_capability::ProcessCapabilityCalculator;

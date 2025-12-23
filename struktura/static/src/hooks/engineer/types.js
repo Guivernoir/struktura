@@ -2,10 +2,10 @@
  * @file hooks/engineer/types.js
  * @description Type definitions for professional engineering operations
  * Mission briefing: Data structures aligned with backend Rust models
- * Now with extended_parameters support - proper type safety, no JSON archaeology
+ * FIXED: Removed duplicate builders - now imports from lib for consistency
  */
 
-import { OutputFormat } from "../../lib";
+import { OutputFormat, EngineeringHelpers } from "../../lib";
 
 /**
  * Initial form state for professional engineering
@@ -62,11 +62,10 @@ export const INITIAL_FORM_STATE = {
   temperature: null,
   humidity: null,
 
-  // NEW: Calculation date/time (ISO 8601)
+  // Calculation date/time (ISO 8601)
   calculationDate: null,
 
-  // NEW: Extended parameters with full type support (HashMap<String, ParameterValue>)
-  // This replaces structured_data for new calculators
+  // Extended parameters with full type support (HashMap<String, ParameterValue>)
   extendedParameters: {},
 
   // LEGACY: Additional calculator-specific parameters (HashMap<String, f64>)
@@ -266,7 +265,7 @@ export function createFormStateFromMetadata(metadata) {
     const section = path[0];
 
     // Handle extended_parameters specially
-    if (section === "extended_parameters") {
+    if (section === "extended_parameters" || section === "extendedParameters") {
       const paramName = path.slice(1).join(".");
 
       // Initialize based on data type
@@ -319,201 +318,50 @@ function setNestedValue(obj, pathArray, value) {
 
 /**
  * Convert datetime-local input to ISO 8601
+ * FIXED: Now uses lib helper for consistency
  */
 export function datetimeLocalToISO(datetimeLocal) {
-  if (!datetimeLocal) return "";
-  // Browser datetime-local is "YYYY-MM-DDTHH:MM"
-  // Convert to ISO 8601: "YYYY-MM-DDTHH:MM:SSZ"
-  return new Date(datetimeLocal).toISOString();
+  return EngineeringHelpers.datetimeLocalToISO(datetimeLocal);
 }
 
 /**
  * Convert ISO 8601 to datetime-local input format
+ * FIXED: Now uses lib helper for consistency
  */
 export function isoToDatetimeLocal(iso) {
-  if (!iso) return "";
-  // ISO is "YYYY-MM-DDTHH:MM:SS.sssZ"
-  // datetime-local needs "YYYY-MM-DDTHH:MM"
-  const date = new Date(iso);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  return EngineeringHelpers.isoToDatetimeLocal(iso);
 }
 
 /**
  * Build ParameterValue object for backend
- * Converts frontend values to proper ParameterValue enum format
+ * FIXED: Now uses lib helper for consistency and proper type handling
  */
 export function buildParameterValue(value, dataType) {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-
-  switch (dataType) {
-    case "number":
-      return {
-        type: "Number",
-        value: typeof value === "number" ? value : parseFloat(value),
-      };
-
-    case "integer":
-      return {
-        type: "Integer",
-        value:
-          typeof value === "number" ? Math.floor(value) : parseInt(value, 10),
-      };
-
-    case "string":
-      return {
-        type: "String",
-        value: String(value),
-      };
-
-    case "datetime": {
-      // Convert datetime-local to ISO 8601 if needed
-      const isoDate = value.includes("Z") ? value : datetimeLocalToISO(value);
-      return {
-        type: "DateTime",
-        value: isoDate,
-      };
-    }
-
-    case "boolean":
-      return {
-        type: "Boolean",
-        value: Boolean(value),
-      };
-
-    case "array":
-      return {
-        type: "Array",
-        value: Array.isArray(value) ? value : [],
-      };
-
-    case "object":
-      return {
-        type: "Object",
-        value: typeof value === "object" ? value : {},
-      };
-
-    default:
-      // Default to string
-      return {
-        type: "String",
-        value: String(value),
-      };
-  }
+  return EngineeringHelpers.buildParameterValue(value, dataType);
 }
 
 /**
  * Build complete parameters object for API request
- * Constructs the new extended_parameters format
+ * FIXED: Now uses lib's createParameters with proper metadata support
+ *
+ * @param {Object} formData - Form data from hooks
+ * @param {Object} metadata - Calculator metadata (REQUIRED for proper extended_parameters typing)
+ * @returns {Object} Properly formatted parameters for backend
  */
 export function buildCalculationParameters(formData, metadata) {
-  const parameters = {
-    dimensions: {},
-    calculationDate: formData.calculationDate || new Date().toISOString(),
-    extendedParameters: {},
-  };
-
-  // Add non-empty dimensions
-  if (formData.dimensions && Object.keys(formData.dimensions).length > 0) {
-    Object.entries(formData.dimensions).forEach(([key, value]) => {
-      if (value !== "" && value !== null && value !== undefined) {
-        parameters.dimensions[key] =
-          typeof value === "number" ? value : parseFloat(value);
-      }
-    });
-  }
-
-  // Add material if present
-  if (formData.material && hasNonEmptyValues(formData.material)) {
-    parameters.material = cleanObject(formData.material);
-  }
-
-  // Add loads if present
-  if (formData.loads && hasNonEmptyValues(formData.loads)) {
-    parameters.loads = cleanObject(formData.loads);
-  }
-
-  // Add safety factors if present
-  if (formData.safetyFactors && hasNonEmptyValues(formData.safetyFactors)) {
-    parameters.safety_factors = cleanObject(formData.safetyFactors);
-  }
-
-  // Add design code if present
-  if (formData.designCode) {
-    parameters.design_code = formData.designCode;
-  }
-
-  // Add environmental conditions
-  if (formData.exposureClass) {
-    parameters.exposure_class = formData.exposureClass;
-  }
-  if (formData.temperature !== null && formData.temperature !== "") {
-    parameters.temperature = parseFloat(formData.temperature);
-  }
-  if (formData.humidity !== null && formData.humidity !== "") {
-    parameters.humidity = parseFloat(formData.humidity);
-  }
-
-  // Build extended_parameters with proper ParameterValue types
-  if (formData.extendedParameters && metadata?.parameters) {
-    Object.entries(formData.extendedParameters).forEach(([key, value]) => {
-      // Find parameter metadata to get data type
-      const param = metadata.parameters.find(
-        (p) => p.path === `extended_parameters.${key}`
-      );
-
-      if (param) {
-        const paramValue = buildParameterValue(value, param.data_type);
-        if (paramValue !== null) {
-          parameters.extendedParameters[key] = paramValue;
-        }
-      }
-    });
-  }
-
-  // Add legacy additional parameters if present
-  if (formData.additional && hasNonEmptyValues(formData.additional)) {
-    parameters.additional = {};
-    Object.entries(formData.additional).forEach(([key, value]) => {
-      if (value !== "" && value !== null && value !== undefined) {
-        parameters.additional[key] =
-          typeof value === "number" ? value : parseFloat(value);
-      }
-    });
-  }
-
-  // Add project metadata if present
-  if (formData.projectMetadata && hasNonEmptyValues(formData.projectMetadata)) {
-    parameters.project_metadata = cleanObject(formData.projectMetadata);
-  }
-
-  return parameters;
-}
-
-/**
- * Check if object has any non-empty values
- */
-function hasNonEmptyValues(obj) {
-  return Object.values(obj).some(
-    (v) => v !== "" && v !== null && v !== undefined
-  );
-}
-
-/**
- * Remove empty values from object
- */
-function cleanObject(obj) {
-  const cleaned = {};
-  Object.entries(obj).forEach(([key, value]) => {
-    if (value !== "" && value !== null && value !== undefined) {
-      cleaned[key] = value;
-    }
+  return EngineeringHelpers.createParameters({
+    dimensions: formData.dimensions || {},
+    material: formData.material,
+    loads: formData.loads,
+    safetyFactors: formData.safetyFactors,
+    designCode: formData.designCode,
+    exposureClass: formData.exposureClass,
+    temperature: formData.temperature,
+    humidity: formData.humidity,
+    calculationDate: formData.calculationDate,
+    extendedParameters: formData.extendedParameters || {},
+    parameterMetadata: metadata?.parameters || [], // CRITICAL: Pass metadata for proper typing
+    additional: formData.additional,
+    projectMetadata: formData.projectMetadata,
   });
-  return Object.keys(cleaned).length > 0 ? cleaned : undefined;
 }

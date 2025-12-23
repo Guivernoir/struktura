@@ -11,7 +11,12 @@
  *           - Maintains backward compatibility with functional methods where possible.
  */
 
-import { OutputFormat, DesignCodes, ApiError, ValidationError } from "./models.js";
+import {
+  OutputFormat,
+  DesignCodes,
+  ApiError,
+  ValidationError,
+} from "./models.js";
 import { EngineeringHelpers } from "./helpers.js";
 import { Validators } from "./validators.js";
 
@@ -167,12 +172,16 @@ export class EngineeringCalculator {
     const paramMeta = this.metadata.parameters.find(
       (p) => p.path === `extended_parameters.${key}`
     );
+    // Use metadata type if available, otherwise use provided type
     const effectiveType = paramMeta ? paramMeta.data_type : dataType;
+    // buildParameterValue now handles both lowercase and uppercase
     const paramValue = EngineeringHelpers.buildParameterValue(
       value,
-      effectiveType.toUpperCase()
+      effectiveType
     );
-    this.parameters.extended_parameters[key] = paramValue;
+    if (paramValue !== null) {
+      this.parameters.extended_parameters[key] = paramValue;
+    }
     return this;
   }
 

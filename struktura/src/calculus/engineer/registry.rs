@@ -298,7 +298,7 @@ pub fn create_default_registry() -> EngineeringRegistry {
         // ========================================================================
         .with_calculator(Arc::new(calculators::production::ConveyorBeltCalculator))
         .with_calculator(Arc::new(calculators::production::ProductionLineBalancingCalculator))
-        .with_calculator(Arc::new(calculators::production::OEECalculator))
+        //.with_calculator(Arc::new(calculators::production::OEECalculator))
         .with_calculator(Arc::new(calculators::production::InventoryOptimizationCalculator))
         .with_calculator(Arc::new(calculators::production::CapacityPlanningCalculator))
         .with_calculator(Arc::new(calculators::production::ProcessCapabilityCalculator))

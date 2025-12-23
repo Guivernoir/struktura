@@ -1,17 +1,12 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import Icon from "../Icon";
-import {
-  isoToDatetimeLocal,
-  datetimeLocalToISO,
-} from "../../hooks/engineer/types";
+import InputField from "./InputField"; // Use the updated InputField
 
 /**
- * ArrayInput - Dynamic array field with add/remove functionality
- * For managing arrays of objects or primitives in engineering parameters
- *
- * Well, that was quite the strategic decision, wasn't it?
- * Arrays that actually behave like arrays.
+ * ArrayInput - Manages dynamic lists of objects.
+ * Updated to use our standard InputField for consistency and
+ * to support the new DateTimePicker automatically.
  */
 const ArrayInput = ({
   label,
@@ -28,37 +23,29 @@ const ArrayInput = ({
   const toggleItem = (index) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
+      next.has(index) ? next.delete(index) : next.add(index);
       return next;
     });
   };
 
   const addItem = () => {
-    const newItem = createEmptyItem(itemSchema);
-    const newArray = [...value, newItem];
-    onChange({
-      target: {
-        name,
-        value: newArray,
-      },
+    const newItem = {};
+    itemSchema.fields.forEach((field) => {
+      newItem[field.name] = field.default !== undefined ? field.default : "";
     });
+
+    const newArray = [...value, newItem];
+    onChange({ target: { name, value: newArray } });
+
     // Auto-expand the new item
     setExpandedItems((prev) => new Set([...prev, newArray.length - 1]));
   };
 
   const removeItem = (index) => {
     const newArray = value.filter((_, i) => i !== index);
-    onChange({
-      target: {
-        name,
-        value: newArray,
-      },
-    });
-    // Clean up expanded items
+    onChange({ target: { name, value: newArray } });
+
+    // Adjust expansion indices
     setExpandedItems((prev) => {
       const next = new Set();
       prev.forEach((i) => {
@@ -69,32 +56,24 @@ const ArrayInput = ({
     });
   };
 
-  const updateItem = (index, field, fieldValue) => {
+  const updateItemField = (index, fieldName, fieldValue) => {
     const newArray = [...value];
-    newArray[index] = {
-      ...newArray[index],
-      [field]: fieldValue,
-    };
-    onChange({
-      target: {
-        name,
-        value: newArray,
-      },
-    });
+    newArray[index] = { ...newArray[index], [fieldName]: fieldValue };
+    onChange({ target: { name, value: newArray } });
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 w-full">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-charcoal-700 dark:text-steel-300">
+        <label className="text-sm font-bold text-charcoal-700 dark:text-steel-300">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
         <button
           type="button"
           onClick={addItem}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg border border-transparent hover:border-indigo-200 transition"
         >
           <Icon name="Plus" size={14} />
           {t?.engineer?.form?.add_item || "Add Item"}
@@ -107,54 +86,74 @@ const ArrayInput = ({
         </p>
       )}
 
-      {/* Array Items */}
-      <div className="space-y-2">
+      {/* List of Items */}
+      <div className="space-y-3">
         {value.length === 0 ? (
-          <div className="p-4 border-2 border-dashed border-sand-300 dark:border-charcoal-700 rounded-xl text-center text-sm text-charcoal-500 dark:text-steel-500">
-            {t?.engineer?.form?.no_items ||
-              "No items yet. Click 'Add Item' to create one."}
+          <div className="p-8 border-2 border-dashed border-sand-300 dark:border-charcoal-700 rounded-xl text-center">
+            <p className="text-sm text-charcoal-400 dark:text-steel-500">
+              {t?.engineer?.form?.no_items || "No items added yet."}
+            </p>
           </div>
         ) : (
           value.map((item, index) => (
             <div
               key={index}
-              className="border border-sand-300 dark:border-charcoal-700 rounded-xl overflow-hidden"
+              className="border border-sand-300 dark:border-charcoal-700 rounded-xl bg-white dark:bg-charcoal-900/50 shadow-sm overflow-hidden"
             >
-              {/* Item Header */}
-              <div className="flex items-center justify-between px-4 py-2 bg-sand-50 dark:bg-charcoal-800/50">
+              {/* Accordion Header */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-sand-50 dark:bg-charcoal-800/40 border-b border-sand-200 dark:border-charcoal-800">
                 <button
                   type="button"
                   onClick={() => toggleItem(index)}
-                  className="flex items-center gap-2 text-sm font-medium text-charcoal-700 dark:text-steel-300 hover:text-charcoal-900 dark:hover:text-white transition"
+                  className="flex items-center gap-2 text-sm font-semibold text-charcoal-700 dark:text-steel-200"
                 >
                   <Icon
                     name={
                       expandedItems.has(index) ? "ChevronDown" : "ChevronRight"
                     }
                     size={16}
+                    className="text-indigo-500"
                   />
-                  {t?.engineer?.form?.item || "Item"} #{index + 1}
+                  {t?.engineer?.form?.item || "Item"} {index + 1}
                 </button>
                 <button
                   type="button"
                   onClick={() => removeItem(index)}
-                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                  className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                  title="Remove Item"
                 >
-                  <Icon name="Trash2" size={14} />
-                  {t?.engineer?.form?.remove || "Remove"}
+                  <Icon name="Trash2" size={16} />
                 </button>
               </div>
 
-              {/* Item Fields */}
+              {/* Accordion Body */}
               {expandedItems.has(index) && (
-                <div className="p-4 space-y-3">
+                <div className="p-4 grid grid-cols-1 gap-4 animate-in slide-in-from-top-1 duration-200">
                   {itemSchema.fields.map((field) => (
-                    <ArrayItemField
+                    <InputField
                       key={field.name}
-                      field={field}
-                      value={item[field.name] || ""}
-                      onChange={(fieldValue) =>
-                        updateItem(index, field.name, fieldValue)
+                      label={field.label}
+                      name={field.name}
+                      // Map "datetime" from schema to "datetime-local" for InputField logic
+                      type={
+                        field.type === "datetime"
+                          ? "datetime-local"
+                          : field.type
+                      }
+                      value={item[field.name]}
+                      unit={field.unit}
+                      required={field.required}
+                      placeholder={field.placeholder}
+                      helpText={field.helpText}
+                      step={field.step}
+                      options={field.enum?.map((opt) => ({
+                        value: opt,
+                        label: opt
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase()),
+                      }))}
+                      onChange={(e) =>
+                        updateItemField(index, field.name, e.target.value)
                       }
                     />
                   ))}
@@ -168,123 +167,6 @@ const ArrayInput = ({
   );
 };
 
-/**
- * Individual field within an array item
- */
-const ArrayItemField = ({ field, value, onChange }) => {
-  const handleChange = (e) => {
-    let newValue = e.target.value;
-
-    // Type conversion
-    if (field.type === "number") {
-      const num = parseFloat(newValue);
-      newValue = isNaN(num) ? newValue : num;
-    } else if (field.type === "integer") {
-      const num = parseInt(newValue, 10);
-      newValue = isNaN(num) ? newValue : num;
-    } else if (field.type === "datetime") {
-      // Convert datetime-local to ISO 8601
-      newValue = datetimeLocalToISO(newValue);
-    }
-
-    onChange(newValue);
-  };
-
-  // For display: Convert ISO back to datetime-local format
-  const displayValue =
-    field.type === "datetime" && value ? isoToDatetimeLocal(value) : value;
-
-  // Render enum dropdown
-  if (field.enum) {
-    return (
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-charcoal-700 dark:text-steel-300">
-          {field.label}
-          {field.required && <span className="text-red-500 ml-1">*</span>}
-        </label>
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full p-2 text-sm border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-lg text-charcoal-900 dark:text-white"
-          required={field.required}
-        >
-          <option value="">Select...</option>
-          {field.enum.map((option) => (
-            <option key={option} value={option}>
-              {option
-                .replace(/_/g, " ")
-                .replace(/\b\w/g, (l) => l.toUpperCase())}
-            </option>
-          ))}
-        </select>
-        {field.helpText && (
-          <p className="text-xs text-charcoal-500 dark:text-steel-500">
-            {field.helpText}
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  // Render text/number input
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-charcoal-700 dark:text-steel-300">
-          {field.label}
-          {field.required && <span className="text-red-500 ml-1">*</span>}
-        </label>
-        {field.unit && (
-          <span className="text-xs text-charcoal-400 dark:text-steel-600 font-mono">
-            {field.unit}
-          </span>
-        )}
-      </div>
-      <input
-        type={
-          field.type === "datetime"
-            ? "datetime-local"
-            : field.type === "number" || field.type === "integer"
-            ? "number"
-            : "text"
-        }
-        value={displayValue}
-        onChange={handleChange}
-        placeholder={field.placeholder}
-        step={field.type === "integer" ? "1" : field.step || "0.1"}
-        className="w-full p-2 text-sm border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 rounded-lg text-charcoal-900 dark:text-white"
-        required={field.required}
-      />
-      {field.helpText && (
-        <p className="text-xs text-charcoal-500 dark:text-steel-500">
-          {field.helpText}
-        </p>
-      )}
-    </div>
-  );
-};
-
-/**
- * Create an empty item based on schema
- */
-function createEmptyItem(schema) {
-  const item = {};
-
-  schema.fields.forEach((field) => {
-    if (field.default !== undefined) {
-      item[field.name] = field.default;
-    } else if (field.type === "number" || field.type === "integer") {
-      item[field.name] = "";
-    } else if (field.type === "boolean") {
-      item[field.name] = false;
-    } else {
-      item[field.name] = "";
-    }
-  });
-
-  return item;
-}
-
 ArrayInput.propTypes = {
   label: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
@@ -295,13 +177,7 @@ ArrayInput.propTypes = {
       PropTypes.shape({
         name: PropTypes.string.isRequired,
         label: PropTypes.string.isRequired,
-        type: PropTypes.oneOf([
-          "string",
-          "number",
-          "integer",
-          "boolean",
-          "datetime",
-        ]).isRequired,
+        type: PropTypes.string.isRequired,
         unit: PropTypes.string,
         required: PropTypes.bool,
         enum: PropTypes.arrayOf(PropTypes.string),
@@ -315,12 +191,6 @@ ArrayInput.propTypes = {
   required: PropTypes.bool,
   helpText: PropTypes.string,
   t: PropTypes.object,
-};
-
-ArrayItemField.propTypes = {
-  field: PropTypes.object.isRequired,
-  value: PropTypes.any,
-  onChange: PropTypes.func.isRequired,
 };
 
 export default ArrayInput;

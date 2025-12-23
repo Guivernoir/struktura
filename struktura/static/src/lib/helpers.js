@@ -61,20 +61,27 @@ export const EngineeringHelpers = {
   /**
    * Build ParameterValue object for backend
    * Converts frontend values to proper ParameterValue enum format
+   * Accepts both lowercase ("number") and uppercase ("NUMBER") type strings
    */
   buildParameterValue: (value, dataType) => {
     if (value === null || value === undefined || value === "") {
       return null;
     }
 
-    switch (dataType) {
+    // Normalize to lowercase for consistent comparison
+    const normalizedType =
+      typeof dataType === "string" ? dataType.toLowerCase() : dataType;
+
+    switch (normalizedType) {
       case ParameterType.NUMBER:
+      case "number":
         return {
           type: "Number",
           value: typeof value === "number" ? value : parseFloat(value),
         };
 
       case ParameterType.INTEGER:
+      case "integer":
         return {
           type: "Integer",
           value:
@@ -82,12 +89,14 @@ export const EngineeringHelpers = {
         };
 
       case ParameterType.STRING:
+      case "string":
         return {
           type: "String",
           value: String(value),
         };
 
-      case ParameterType.DATETIME: {
+      case ParameterType.DATETIME:
+      case "datetime": {
         // Convert datetime-local to ISO 8601 if needed (adds missing Z)
         let isoDate = value;
         if (!value.includes("Z") && !value.includes("+")) {
@@ -104,18 +113,21 @@ export const EngineeringHelpers = {
       }
 
       case ParameterType.BOOLEAN:
+      case "boolean":
         return {
           type: "Boolean",
           value: Boolean(value),
         };
 
       case ParameterType.ARRAY:
+      case "array":
         return {
           type: "Array",
           value: Array.isArray(value) ? value : [],
         };
 
       case ParameterType.OBJECT:
+      case "object":
         return {
           type: "Object",
           value: typeof value === "object" ? value : {},

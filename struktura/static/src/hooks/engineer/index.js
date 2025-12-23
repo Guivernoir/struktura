@@ -4,6 +4,7 @@
  * Mission objective: Command center for special forces operations
  *
  * Architecture: Composed from specialized sub-hooks with military precision
+ * FIXED: Now passes metadata to calculation hook for proper type inference
  */
 
 import { useState, useEffect } from "react";
@@ -11,16 +12,16 @@ import { useMetadata } from "./useMetadata";
 import { useForm } from "./useForm";
 import { useValidation } from "./useValidation";
 import { useCalculation } from "./useCalculation";
-import { api } from "../../lib"; // Added import for API
+import { api } from "../../lib";
 import { DEFAULT_CATEGORY, DEFAULT_OUTPUT_FORMAT } from "./types";
 
 export const useEngineerCalculator = () => {
   const [selectedCategory, setSelectedCategory] = useState(DEFAULT_CATEGORY);
   const [selectedCalculator, setSelectedCalculator] = useState(null);
   const [outputFormat, setOutputFormat] = useState(DEFAULT_OUTPUT_FORMAT);
-  const [categories, setCategories] = useState([]); // Added for categories
+  const [categories, setCategories] = useState([]);
 
-  // Added fetch for categories
+  // Fetch categories
   useEffect(() => {
     async function fetchCategories() {
       try {
@@ -57,7 +58,7 @@ export const useEngineerCalculator = () => {
     formData
   );
 
-  // Calculation execution
+  // Calculation execution - NOW WITH METADATA
   const {
     results,
     warnings,
@@ -71,6 +72,7 @@ export const useEngineerCalculator = () => {
     selectedCalculator,
     formData,
     outputFormat,
+    calculatorMetadata, // FIXED: Pass metadata for extended_parameters typing
     validateOrThrow
   );
 
@@ -84,9 +86,8 @@ export const useEngineerCalculator = () => {
   const error = metadataError || calculationError;
 
   return {
-    // Added
+    // Category management
     categories,
-    // Category selection
     selectedCategory,
     setSelectedCategory,
 
@@ -103,7 +104,7 @@ export const useEngineerCalculator = () => {
     handleInputChange,
     handleFormEvent,
     updateSection,
-    setFormData, // For advanced manual updates
+    setFormData,
 
     // Output format
     outputFormat,
