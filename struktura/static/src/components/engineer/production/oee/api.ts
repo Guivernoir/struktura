@@ -37,9 +37,10 @@ export interface SensitivityAnalysis {
  * Leverage Impact Result
  */
 export interface LeverageImpact {
-    parameter: string;
-    impact_score: number;
-    description: string;
+    category_key: string;
+    oee_opportunity_points: number;
+    throughput_gain_units: number;
+    sensitivity_score: number;
 }
 
 /**

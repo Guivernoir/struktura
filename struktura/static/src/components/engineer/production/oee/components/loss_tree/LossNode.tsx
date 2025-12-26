@@ -9,7 +9,6 @@
 import React from "react";
 import LossImpactBadge from "./LossImpactBadge";
 import type { LossTreeNode as LossTreeNodeType } from "../../models";
-import { formatDuration } from "../../utils";
 
 export interface LossNodeProps {
   node: LossTreeNodeType;

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Leverage impact analysis result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeverageImpact {
-    /// Loss category (translation key)
+    /// Loss category (translation key)e
     pub category_key: String,
     /// OEE points gained if eliminated (e.g., 4.2 = +4.2%)
     pub oee_opportunity_points: f64,

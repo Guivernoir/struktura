@@ -25,8 +25,9 @@ const ValidationBanner: React.FC<ValidationBannerProps> = ({
   const errors = validation.issues.filter((i) => i.severity === "Fatal");
   const warnings = validation.issues.filter((i) => i.severity === "Warning");
   const info = validation.issues.filter((i) => i.severity === "Info");
+  const totalIssues = errors.length + warnings.length + info.length;
 
-  if (validation.is_valid && warnings.length === 0 && info.length === 0) {
+  if (validation.is_valid && totalIssues === 0) {
     return (
       <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 p-4 rounded-md animate-slide-down">
         <div className="flex items-center">
@@ -49,7 +50,6 @@ const ValidationBanner: React.FC<ValidationBannerProps> = ({
     );
   }
 
-  const totalIssues = errors.length + warnings.length + info.length;
   const severity =
     errors.length > 0 ? "error" : warnings.length > 0 ? "warning" : "info";
 
@@ -65,6 +65,12 @@ const ValidationBanner: React.FC<ValidationBannerProps> = ({
     info: "text-blue-800 dark:text-blue-400",
   }[severity];
 
+  const iconColor = {
+    error: "text-red-600 dark:text-red-400",
+    warning: "text-yellow-600 dark:text-yellow-400",
+    info: "text-blue-600 dark:text-blue-400",
+  }[severity];
+
   return (
     <div
       className={`${bgColor} border-l-4 rounded-md overflow-hidden animate-slide-down`}
@@ -76,7 +82,7 @@ const ValidationBanner: React.FC<ValidationBannerProps> = ({
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <svg
-              className={`w-5 h-5 ${textColor} flex-shrink-0 mt-0.5`}
+              className={`w-5 h-5 ${iconColor} flex-shrink-0 mt-0.5`}
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -104,54 +110,87 @@ const ValidationBanner: React.FC<ValidationBannerProps> = ({
             </svg>
             <div>
               <p className={`text-sm font-semibold ${textColor}`}>
+                {totalIssues} Issue{totalIssues !== 1 ? "s" : ""} Detected
                 {errors.length > 0 &&
-                  `${errors.length} Mathematical Inconsistenc${
+                  ` (${errors.length} Inconsistenc${
                     errors.length !== 1 ? "ies" : "y"
-                  }`}
-                {errors.length > 0 && warnings.length > 0 && ", "}
-                {warnings.length > 0 &&
-                  `${warnings.length} Warning${
-                    warnings.length !== 1 ? "s" : ""
-                  }`}
-                {info.length > 0 &&
-                  ` (${info.length} Note${info.length !== 1 ? "s" : ""})`}
+                  })`}
               </p>
               <p className="text-xs mt-1 text-charcoal-600 dark:text-charcoal-400">
                 {!validation.is_valid
                   ? "These issues suggest data quality concerns but will not block calculation"
                   : "Informational notices about your inputs"}
+                {" • "}
+                <span className="font-medium">
+                  Click to {isExpanded ? "collapse" : "expand"}
+                </span>
               </p>
             </div>
           </div>
-          <svg
-            className={`w-5 h-5 ${textColor} transition-transform ${
-              isExpanded ? "rotate-180" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          <div className="flex items-center gap-2">
+            {/* Issue count badge */}
+            <span
+              className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                severity === "error"
+                  ? "bg-red-200 dark:bg-red-900 text-red-900 dark:text-red-200"
+                  : severity === "warning"
+                  ? "bg-yellow-200 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-200"
+                  : "bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200"
+              }`}
+            >
+              {totalIssues}
+            </span>
+            <svg
+              className={`w-5 h-5 ${iconColor} transition-transform ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
         </div>
       </div>
 
       {isExpanded && (
         <div className="px-4 pb-4 space-y-2 animate-slide-down">
-          {errors.map((issue, idx) => (
-            <ValidationItem key={`error-${idx}`} issue={issue} />
-          ))}
-          {warnings.map((issue, idx) => (
-            <ValidationItem key={`warning-${idx}`} issue={issue} />
-          ))}
-          {info.map((issue, idx) => (
-            <ValidationItem key={`info-${idx}`} issue={issue} />
-          ))}
+          {errors.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold text-charcoal-700 dark:text-charcoal-300 uppercase tracking-wide">
+                Mathematical Inconsistencies ({errors.length})
+              </h4>
+              {errors.map((issue, idx) => (
+                <ValidationItem key={`error-${idx}`} issue={issue} />
+              ))}
+            </div>
+          )}
+          {warnings.length > 0 && (
+            <div className="space-y-2 mt-3">
+              <h4 className="text-xs font-semibold text-charcoal-700 dark:text-charcoal-300 uppercase tracking-wide">
+                Warnings ({warnings.length})
+              </h4>
+              {warnings.map((issue, idx) => (
+                <ValidationItem key={`warning-${idx}`} issue={issue} />
+              ))}
+            </div>
+          )}
+          {info.length > 0 && (
+            <div className="space-y-2 mt-3">
+              <h4 className="text-xs font-semibold text-charcoal-700 dark:text-charcoal-300 uppercase tracking-wide">
+                Informational Notes ({info.length})
+              </h4>
+              {info.map((issue, idx) => (
+                <ValidationItem key={`info-${idx}`} issue={issue} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -7,13 +7,7 @@
 
 import React from "react";
 import SensitivityIndicator from "./SensitivityIndicator";
-
-export interface LeverageImpact {
-  category_key: string;
-  oee_opportunity_points: number;
-  throughput_gain_units: number;
-  sensitivity_score: number;
-}
+import type { LeverageImpact } from "../../api";
 
 export interface LeverageRowProps {
   impact: LeverageImpact;

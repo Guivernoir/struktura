@@ -9,7 +9,6 @@
 import React from "react";
 import EconomicRangeBar from "./EconomicRangeBar";
 import type { EconomicAnalysis } from "../../models";
-import { formatCurrency } from "../../utils";
 
 export interface EconomicImpactPanelProps {
   analysis: EconomicAnalysis;

@@ -8,7 +8,7 @@
 import React, { useState } from "react";
 import FormulaPopover from "./FormulaPopover";
 import type { TrackedMetric } from "../../models";
-import { formatPercentage, getConfidenceColorClass } from "../../utils";
+import { formatPercentage } from "../../utils";
 
 export interface MetricCardProps {
   metric: TrackedMetric;
@@ -61,7 +61,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
         {/* Value */}
         <div className={`metric-value ${colorClasses[color]}`}>
           {metric.unit_key === "units.percentage"
-            ? formatPercentage(metric)
+            ? formatPercentage(metric.value)
             : `${metric.value.toFixed(2)} ${metric.unit_key.replace(
                 "units.",
                 ""
