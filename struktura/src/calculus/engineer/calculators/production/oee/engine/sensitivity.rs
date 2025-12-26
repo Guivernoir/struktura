@@ -289,14 +289,14 @@ fn analyze_cycle_time_sensitivity(
     baseline_metrics: &CoreMetrics,
     variation_percent: f64,
 ) -> SensitivityResult {
-    let baseline_value = input.cycle_time.average_cycle_time.value().as_secs_f64();
+    let baseline_value = input.cycle_time.average_cycle_time.clone().expect("No avg time").value().as_secs_f64();
     // For cycle time, we want to see impact of IMPROVING it (reducing)
     let varied_value = baseline_value * (1.0 - variation_percent / 100.0);
     
     let mut modified_input = input.clone();
     let new_duration = Duration::from_secs_f64(varied_value);
     modified_input.cycle_time.average_cycle_time = 
-        crate::calculus::engineer::calculators::production::oee::assumptions::InputValue::Explicit(new_duration);
+        Some(crate::calculus::engineer::calculators::production::oee::assumptions::InputValue::Explicit(new_duration));
     
     // Critical fix: With faster cycle time, theoretical capacity increases
     // Recalculate what production would be at the improved cycle time
