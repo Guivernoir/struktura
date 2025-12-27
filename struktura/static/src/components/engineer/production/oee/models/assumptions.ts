@@ -1,155 +1,99 @@
 /**
- * Assumption layer types
+ * OEE Assumptions Layer - TypeScript Edition
  * 
- * This is the "curation layer" - where we accept analyst-provided
- * summaries and track their provenance religiously.
- * 
- * Every value knows if it's Explicit, Inferred, or Default.
+ * The "curation layer" - where analyst-provided summaries meet type safety.
+ * Every value knows its provenance. Trust, but verify. And document.
  */
-
-import { MachineState } from './enums';
 
 /**
  * How a value was obtained - the foundation of trust
  * 
- * TypeScript representation of Rust's InputValue<T> enum
+ * Because "I think it was 42" and "the sensor said 42" are rather different propositions.
  */
 export type InputValue<T> = 
-  | { type: 'Explicit'; value: T }
-  | { type: 'Inferred'; value: T }
-  | { type: 'Default'; value: T };
+  | { type: 'explicit'; value: T }
+  | { type: 'inferred'; value: T }
+  | { type: 'default'; value: T };
 
 /**
- * Helper functions for InputValue
+ * Machine operational states
  */
-export const InputValueHelpers = {
-  /**
-   * Create an explicit input value
-   */
-  explicit: <T>(value: T): InputValue<T> => ({
-    type: 'Explicit',
-    value,
-  }),
+export enum MachineState {
+  Running = 'running',
+  Stopped = 'stopped',
+  Setup = 'setup',
+  Starved = 'starved',
+  Blocked = 'blocked',
+  Maintenance = 'maintenance',
+  Unknown = 'unknown'
+}
 
-  /**
-   * Create an inferred input value
-   */
-  inferred: <T>(value: T): InputValue<T> => ({
-    type: 'Inferred',
-    value,
-  }),
-
-  /**
-   * Create a default input value
-   */
-  default: <T>(value: T): InputValue<T> => ({
-    type: 'Default',
-    value,
-  }),
-
-  /**
-   * Get the actual value regardless of source
-   */
-  getValue: <T>(input: InputValue<T>): T => input.value,
-
-  /**
-   * Check if this is an explicit value
-   */
-  isExplicit: <T>(input: InputValue<T>): boolean => input.type === 'Explicit',
-
-  /**
-   * Check if this is inferred
-   */
-  isInferred: <T>(input: InputValue<T>): boolean => input.type === 'Inferred',
-
-  /**
-   * Check if this is a default
-   */
-  isDefault: <T>(input: InputValue<T>): boolean => input.type === 'Default',
-
-  /**
-   * Get the source type as string (for ledger)
-   */
-  sourceType: <T>(input: InputValue<T>): string => {
-    switch (input.type) {
-      case 'Explicit': return 'explicit';
-      case 'Inferred': return 'inferred';
-      case 'Default': return 'default';
-    }
-  },
-
-  /**
-   * Map the value to a different type
-   */
-  map: <T, U>(input: InputValue<T>, fn: (value: T) => U): InputValue<U> => {
-    const newValue = fn(input.value);
-    switch (input.type) {
-      case 'Explicit':
-        return { type: 'Explicit', value: newValue };
-      case 'Inferred':
-        return { type: 'Inferred', value: newValue };
-      case 'Default':
-        return { type: 'Default', value: newValue };
-    }
-  },
-};
+/**
+ * Hierarchical reason code
+ * 
+ * e.g., ["Mechanical", "Bearing Failure"] - because "stuff broke" lacks tactical precision
+ */
+export interface ReasonCode {
+  /** Hierarchical path from general to specific */
+  path: string[];
+  /** Whether this represents an equipment failure */
+  isFailure: boolean;
+}
 
 /**
  * Analysis time window
  */
 export interface AnalysisWindow {
-  start: string; // ISO 8601 datetime string
-  end: string;   // ISO 8601 datetime string
+  start: string; // ISO 8601 timestamp
+  end: string;   // ISO 8601 timestamp
 }
 
 /**
  * Machine context for the analysis
  */
 export interface MachineContext {
-  machine_id: string;
-  line_id?: string;
-  product_id?: string;
-  shift_id?: string;
-}
-
-/**
- * Hierarchical reason code
- */
-export interface ReasonCode {
-  /** Hierarchical path, e.g., ["Mechanical", "Bearing Failure"] */
-  path: string[];
-  is_failure: boolean;
+  machineId: string;
+  lineId?: string;
+  productId?: string;
+  shiftId?: string;
 }
 
 /**
  * Production count summary
+ * 
+ * The core production numbers with source tracking.
  */
 export interface ProductionSummary {
-  total_units: InputValue<number>;
-  good_units: InputValue<number>;
-  scrap_units: InputValue<number>;
-  reworked_units: InputValue<number>;
+  totalUnits: InputValue<number>;
+  goodUnits: InputValue<number>;
+  scrapUnits: InputValue<number>;
+  reworkedUnits: InputValue<number>;
 }
 
 /**
  * Cycle time model
+ * 
+ * Ideal vs actual cycle times with override handling.
  */
 export interface CycleTimeModel {
-  /** Theoretical minimum cycle time (design spec) in seconds */
-  ideal_cycle_time: InputValue<number>;
-  /** Observed average cycle time (if available) in seconds */
-  average_cycle_time?: InputValue<number>;
+  /** Theoretical minimum cycle time (design spec) - in seconds */
+  idealCycleTime: InputValue<number>;
+  /** Observed average cycle time (if available) - in seconds */
+  averageCycleTime?: InputValue<number>;
 }
 
 /**
  * Individual downtime event
+ * 
+ * One machine stop, documented with surgical precision.
  */
 export interface DowntimeRecord {
-  duration: InputValue<number>; // Duration in seconds
+  /** Duration in seconds */
+  duration: InputValue<number>;
   reason: ReasonCode;
-  /** When it occurred (optional) */
-  timestamp?: string; // ISO 8601 datetime string
-  /** Additional context */
+  /** When it occurred (ISO 8601) */
+  timestamp?: string;
+  /** Additional context - for when "bearing failure" needs elaboration */
   notes?: string;
 }
 
@@ -162,18 +106,30 @@ export interface DowntimeCollection {
 
 /**
  * Threshold definitions for loss categorization
+ * 
+ * The boundaries between "minor inconvenience" and "call the engineers immediately."
  */
 export interface ThresholdConfiguration {
-  /** Minimum duration to count as downtime (vs micro-stoppage) in seconds */
-  micro_stoppage_threshold: number;
-  /** Maximum duration for "small stop" categorization in seconds */
-  small_stop_threshold: number;
-  /** Speed loss detection threshold (% below ideal) */
-  speed_loss_threshold: number;
-  /** High scrap rate warning threshold (%) */
-  high_scrap_rate_threshold: number;
-  /** Low utilization warning threshold (%) */
-  low_utilization_threshold: number;
+  /** Minimum duration to count as downtime (vs micro-stoppage) - in seconds */
+  microStoppageThreshold: number;
+  /** Maximum duration for "small stop" categorization - in seconds */
+  smallStopThreshold: number;
+  /** Speed loss detection threshold (ratio below ideal, e.g., 0.05 = 5%) */
+  speedLossThreshold: number;
+  /** High scrap rate warning threshold (ratio, e.g., 0.20 = 20%) */
+  highScrapRateThreshold: number;
+  /** Low utilization warning threshold (ratio, e.g., 0.30 = 30%) */
+  lowUtilizationThreshold: number;
+}
+
+/**
+ * Threshold application result
+ */
+export interface ThresholdClassification {
+  categoryKey: string;
+  thresholdUsed: string;
+  thresholdValue: number;
+  actualValue: number;
 }
 
 /**
@@ -181,7 +137,8 @@ export interface ThresholdConfiguration {
  */
 export interface TimeAllocation {
   state: MachineState;
-  duration: InputValue<number>; // Duration in seconds
+  /** Duration in seconds */
+  duration: InputValue<number>;
   reason?: ReasonCode;
   /** Optional notes/context */
   notes?: string;
@@ -189,43 +146,71 @@ export interface TimeAllocation {
 
 /**
  * Complete time allocation model for an analysis window
+ * 
+ * Now with optional TEEP support - for when OEE just isn't comprehensive enough.
  */
 export interface TimeModel {
-  planned_production_time: InputValue<number>; // Duration in seconds
+  /** Planned production time in seconds */
+  plannedProductionTime: InputValue<number>;
   allocations: TimeAllocation[];
   /** Optional: Total calendar time for TEEP calculation (e.g., 24/7 time) in seconds */
-  all_time?: InputValue<number>;
+  allTime?: InputValue<number>;
 }
 
 /**
- * Default threshold configuration per industry standards
+ * Helper functions for working with InputValue
  */
-export const DEFAULT_THRESHOLDS: ThresholdConfiguration = {
-  micro_stoppage_threshold: 30,        // 30 seconds
-  small_stop_threshold: 5 * 60,        // 5 minutes
-  speed_loss_threshold: 0.05,          // 5% below ideal
-  high_scrap_rate_threshold: 0.20,     // 20%
-  low_utilization_threshold: 0.30,     // 30%
+export const InputValueHelpers = {
+  /** Extract the value, regardless of provenance */
+  getValue: <T>(input: InputValue<T>): T => input.value,
+  
+  /** Check if value is explicitly provided */
+  isExplicit: <T>(input: InputValue<T>): boolean => input.type === 'explicit',
+  
+  /** Check if value is inferred */
+  isInferred: <T>(input: InputValue<T>): boolean => input.type === 'inferred',
+  
+  /** Check if value is a default */
+  isDefault: <T>(input: InputValue<T>): boolean => input.type === 'default',
+  
+  /** Create explicit value */
+  explicit: <T>(value: T): InputValue<T> => ({ type: 'explicit', value }),
+  
+  /** Create inferred value */
+  inferred: <T>(value: T): InputValue<T> => ({ type: 'inferred', value }),
+  
+  /** Create default value */
+  default: <T>(value: T): InputValue<T> => ({ type: 'default', value }),
 };
 
 /**
- * Strict thresholds (more aggressive categorization)
+ * Default threshold configurations
  */
-export const STRICT_THRESHOLDS: ThresholdConfiguration = {
-  micro_stoppage_threshold: 15,        // 15 seconds
-  small_stop_threshold: 3 * 60,        // 3 minutes
-  speed_loss_threshold: 0.02,          // 2% below ideal
-  high_scrap_rate_threshold: 0.10,     // 10%
-  low_utilization_threshold: 0.50,     // 50%
-};
-
-/**
- * Lenient thresholds (less noise)
- */
-export const LENIENT_THRESHOLDS: ThresholdConfiguration = {
-  micro_stoppage_threshold: 60,        // 60 seconds
-  small_stop_threshold: 10 * 60,       // 10 minutes
-  speed_loss_threshold: 0.10,          // 10% below ideal
-  high_scrap_rate_threshold: 0.30,     // 30%
-  low_utilization_threshold: 0.20,     // 20%
+export const DefaultThresholds = {
+  /** Conservative defaults per industry standards */
+  defaults: (): ThresholdConfiguration => ({
+    microStoppageThreshold: 30,        // 30 seconds
+    smallStopThreshold: 5 * 60,        // 5 minutes
+    speedLossThreshold: 0.05,          // 5% below ideal
+    highScrapRateThreshold: 0.20,      // 20%
+    lowUtilizationThreshold: 0.30,     // 30%
+  }),
+  
+  /** Strict thresholds (more aggressive categorization) */
+  strict: (): ThresholdConfiguration => ({
+    microStoppageThreshold: 15,
+    smallStopThreshold: 3 * 60,
+    speedLossThreshold: 0.02,
+    highScrapRateThreshold: 0.10,
+    lowUtilizationThreshold: 0.50,
+  }),
+  
+  /** Lenient thresholds (less noise, more peace) */
+  lenient: (): ThresholdConfiguration => ({
+    microStoppageThreshold: 60,
+    smallStopThreshold: 10 * 60,
+    speedLossThreshold: 0.10,
+    highScrapRateThreshold: 0.30,
+    lowUtilizationThreshold: 0.20,
+  }),
 };

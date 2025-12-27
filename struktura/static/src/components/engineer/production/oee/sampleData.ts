@@ -2,12 +2,13 @@
  * Sample Data Generator for OEE Calculator
  * 
  * Provides realistic test data for development and demonstration.
- * Place this in: struktura/static/src/components/engineer/production/oee/sampleData.ts
+ * All types imported from models - no structure duplication.
  */
 
-import type { OeeInput, EconomicParameters } from './models';
-import { MachineState } from './models/enums';
-import { explicit, type ReasonCode } from './models/input';
+import type { OeeInput, EconomicParameters, ReasonCode } from './models';
+import { MachineState, InputValueHelpers } from './models';
+
+const { explicit } = InputValueHelpers;
 
 /**
  * Generate a sample OEE input with realistic production data
@@ -39,7 +40,7 @@ export function generateSampleInput(): OeeInput {
   // Downtime reason codes
   const mechanicalFailure: ReasonCode = {
     path: ["Mechanical", "Bearing Failure"],
-    is_failure: true,
+    isFailure: true,
   };
 
   return {
@@ -48,19 +49,19 @@ export function generateSampleInput(): OeeInput {
       end: shiftEnd.toISOString(),
     },
     machine: {
-      machine_id: "M-001",
-      line_id: "Line-A",
-      product_id: "WIDGET-X",
-      shift_id: "SHIFT-1",
+      machineId: "M-001",
+      lineId: "Line-A",
+      productId: "WIDGET-X",
+      shiftId: "SHIFT-1",
     },
-    time_model: {
-      planned_production_time: explicit(plannedTime),
+    timeModel: {
+      plannedProductionTime: explicit(plannedTime),
       allocations: [
         {
           state: MachineState.Running,
           duration: explicit(runningTime),
-          reason: null,
-          notes: null,
+          reason: undefined,
+          notes: undefined,
         },
         {
           state: MachineState.Stopped,
@@ -69,17 +70,17 @@ export function generateSampleInput(): OeeInput {
           notes: "Main spindle bearing replacement required",
         },
       ],
-      all_time: explicit(86400), // 24 hours for TEEP calculation
+      allTime: explicit(86400), // 24 hours for TEEP calculation
     },
     production: {
-      total_units: explicit(totalUnits),
-      good_units: explicit(goodUnits),
-      scrap_units: explicit(scrapUnits),
-      reworked_units: explicit(reworkUnits),
+      totalUnits: explicit(totalUnits),
+      goodUnits: explicit(goodUnits),
+      scrapUnits: explicit(scrapUnits),
+      reworkedUnits: explicit(reworkUnits),
     },
-    cycle_time: {
-      ideal_cycle_time: explicit(idealCycleTime),
-      average_cycle_time: explicit(26.5), // Slightly slower than ideal
+    cycleTime: {
+      idealCycleTime: explicit(idealCycleTime),
+      averageCycleTime: explicit(26.5), // Slightly slower than ideal
     },
     downtimes: {
       records: [
@@ -92,11 +93,11 @@ export function generateSampleInput(): OeeInput {
       ],
     },
     thresholds: {
-      micro_stoppage_threshold: 30,        // 30 seconds
-      small_stop_threshold: 300,           // 5 minutes
-      speed_loss_threshold: 0.05,          // 5%
-      high_scrap_rate_threshold: 0.20,     // 20%
-      low_utilization_threshold: 0.30,     // 30%
+      microStoppageThreshold: 30,        // 30 seconds
+      smallStopThreshold: 300,           // 5 minutes
+      speedLossThreshold: 0.05,          // 5%
+      highScrapRateThreshold: 0.20,      // 20%
+      lowUtilizationThreshold: 0.30,     // 30%
     },
   };
 }
@@ -106,10 +107,10 @@ export function generateSampleInput(): OeeInput {
  */
 export function generateSampleEconomicParams(): EconomicParameters {
   return {
-    unit_price: [45.0, 50.0, 55.0],              // Low, Central, High in USD
-    marginal_contribution: [20.0, 25.0, 30.0],   // Margin per unit
-    material_cost: [15.0, 18.0, 22.0],           // Material cost per unit
-    labor_cost_per_hour: [35.0, 40.0, 45.0],     // Labor rate
+    unitPrice: [45.0, 50.0, 55.0],              // Low, Central, High in USD
+    marginalContribution: [20.0, 25.0, 30.0],   // Margin per unit
+    materialCost: [15.0, 18.0, 22.0],           // Material cost per unit
+    laborCostPerHour: [35.0, 40.0, 45.0],       // Labor rate
     currency: "USD",
   };
 }
@@ -122,35 +123,35 @@ export function generateHighPerformanceInput(): OeeInput {
   
   return {
     ...base,
-    time_model: {
-      ...base.time_model,
+    timeModel: {
+      ...base.timeModel,
       allocations: [
         {
           state: MachineState.Running,
           duration: explicit(27000), // 7.5 hours running
-          reason: null,
-          notes: null,
+          reason: undefined,
+          notes: undefined,
         },
         {
           state: MachineState.Stopped,
           duration: explicit(1800), // 30 minutes downtime
           reason: {
             path: ["Setup", "Product Changeover"],
-            is_failure: false,
+            isFailure: false,
           },
           notes: "Planned changeover",
         },
       ],
     },
     production: {
-      total_units: explicit(1050),
-      good_units: explicit(1040),
-      scrap_units: explicit(8),
-      reworked_units: explicit(2),
+      totalUnits: explicit(1050),
+      goodUnits: explicit(1040),
+      scrapUnits: explicit(8),
+      reworkedUnits: explicit(2),
     },
-    cycle_time: {
-      ideal_cycle_time: explicit(25.2),
-      average_cycle_time: explicit(25.7), // Very close to ideal
+    cycleTime: {
+      idealCycleTime: explicit(25.2),
+      averageCycleTime: explicit(25.7), // Very close to ideal
     },
   };
 }
@@ -163,35 +164,35 @@ export function generateProblematicInput(): OeeInput {
   
   return {
     ...base,
-    time_model: {
-      ...base.time_model,
+    timeModel: {
+      ...base.timeModel,
       allocations: [
         {
           state: MachineState.Running,
           duration: explicit(21600), // 6 hours running
-          reason: null,
-          notes: null,
+          reason: undefined,
+          notes: undefined,
         },
         {
           state: MachineState.Stopped,
           duration: explicit(7200), // 2 hours downtime
           reason: {
             path: ["Mechanical", "Multiple Breakdowns"],
-            is_failure: true,
+            isFailure: true,
           },
           notes: "Multiple equipment failures throughout shift",
         },
       ],
     },
     production: {
-      total_units: explicit(850),
-      good_units: explicit(720),
-      scrap_units: explicit(100),
-      reworked_units: explicit(30),
+      totalUnits: explicit(850),
+      goodUnits: explicit(720),
+      scrapUnits: explicit(100),
+      reworkedUnits: explicit(30),
     },
-    cycle_time: {
-      ideal_cycle_time: explicit(25.2),
-      average_cycle_time: explicit(30.5), // Significantly slower
+    cycleTime: {
+      idealCycleTime: explicit(25.2),
+      averageCycleTime: explicit(30.5), // Significantly slower
     },
     downtimes: {
       records: [
@@ -199,7 +200,7 @@ export function generateProblematicInput(): OeeInput {
           duration: explicit(4800),
           reason: {
             path: ["Mechanical", "Hydraulic Failure"],
-            is_failure: true,
+            isFailure: true,
           },
           timestamp: base.window.start,
           notes: "Hydraulic system failure",
@@ -208,7 +209,7 @@ export function generateProblematicInput(): OeeInput {
           duration: explicit(2400),
           reason: {
             path: ["Electrical", "Control Panel"],
-            is_failure: true,
+            isFailure: true,
           },
           timestamp: base.window.start,
           notes: "Control panel malfunction",
@@ -216,6 +217,16 @@ export function generateProblematicInput(): OeeInput {
       ],
     },
   };
+}
+
+/**
+ * Scenario descriptor for demo purposes
+ */
+export interface SampleScenario {
+  name: string;
+  description: string;
+  input: () => OeeInput;
+  economic: () => EconomicParameters;
 }
 
 /**
@@ -240,7 +251,7 @@ export const SAMPLE_SCENARIOS = {
     input: generateProblematicInput,
     economic: generateSampleEconomicParams,
   },
-};
+} as const satisfies Record<string, SampleScenario>;
 
 /**
  * Get a scenario by name

@@ -158,6 +158,11 @@ const EngineerCalculator: React.FC = () => {
   >(undefined);
   const [showSampleLoader, setShowSampleLoader] = useState(false);
 
+  const [sampleLoadCounter, setSampleLoadCounter] = useState(0);
+  const [lastLoadedScenario, setLastLoadedScenario] = useState<string | null>(
+    null
+  );
+
   /**
    * Load a sample scenario for testing
    */
@@ -166,10 +171,19 @@ const EngineerCalculator: React.FC = () => {
       const { input, economic } = getScenario(scenarioName);
       setOeeInitialInput(input);
       setOeeEconomicParams(economic);
+      setSampleLoadCounter((prev) => prev + 1);
+      setLastLoadedScenario(SAMPLE_SCENARIOS[scenarioName].name);
       setShowSampleLoader(false);
     },
     []
   );
+
+  const clearSampleData = useCallback(() => {
+    setOeeInitialInput(undefined);
+    setOeeEconomicParams(undefined);
+    setSampleLoadCounter((prev) => prev + 1);
+    setLastLoadedScenario(null);
+  }, []);
 
   /**
    * Translate a key, or admit defeat gracefully
@@ -222,6 +236,42 @@ const EngineerCalculator: React.FC = () => {
     if (selectedCalculator === "oee") {
       return (
         <div className="space-y-6">
+          {lastLoadedScenario && (
+            <div className="bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800 p-4 animate-slide-down">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 text-green-600 dark:text-green-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                      Sample Data Loaded: {lastLoadedScenario}
+                    </p>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                      The input fields have been populated. Review the
+                      Assumptions tab and click "Calculate OEE" when ready.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={clearSampleData}
+                  className="flex-shrink-0 text-xs text-green-600 dark:text-green-400 hover:underline"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
           {/* Sample Data Loader */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
             <div className="flex items-start justify-between mb-4">
@@ -266,6 +316,7 @@ const EngineerCalculator: React.FC = () => {
 
           {/* OEE Engine */}
           <OeeEngine
+            key={`oee-instance-${sampleLoadCounter}`}
             initialInput={oeeInitialInput}
             initialEconomicParams={oeeEconomicParams}
             onResultsReady={handleOeeResultsReady}

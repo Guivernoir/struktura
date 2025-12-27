@@ -1,104 +1,39 @@
 /**
  * OEE Calculator API Client
- * * Handles communication with the Rust backend calculation engine.
- * Fully supports Core OEE, Economic Analysis, Sensitivity, Leverage, and Multi-machine aggregation.
+ * 
+ * Handles communication with the Rust backend calculation engine.
+ * All type definitions imported from models - no structure duplication.
  */
 
-import type { OeeInput, OeeResult, EconomicParameters } from './models';
-
-// --- Type Definitions matching Backend Structs ---
+import type {
+  OeeInput,
+  ApiError,
+  CalculateRequest,
+  CalculateResponse,
+  CalculateWithEconomicsRequest,
+  CalculateFullRequest,
+  CalculateFullResponse,
+  SensitivityRequest,
+  SensitivityResponse,
+  LeverageRequest,
+  LeverageResponse,
+  TemporalScrapRequest,
+  TemporalScrapResponse,
+  SystemAggregateRequest,
+  SystemAggregateResponse,
+  SystemCompareMethodsRequest,
+  SystemCompareMethodsResponse,
+  EconomicParameters,
+  AggregationMethod,
+  MachineOeeData,
+} from './models';
 
 /**
- * Backend API Error structure
- */
-export interface ApiError {
-  code: string;
-  message_key: string;
-  params?: Record<string, unknown>;
-  // Legacy support for older UI components expecting 'message'
-  message?: string; 
-}
-
-/**
- * API response wrapper
+ * Generic API response wrapper for type safety
  */
 export type ApiResponse<T> = 
   | { success: true; data: T }
   | { success: false; error: ApiError };
-
-/**
- * Sensitivity Analysis Result
- */
-export interface SensitivityAnalysis {
-    factors: Record<string, { impact: number; sensitivity: number }>;
-}
-
-/**
- * Leverage Impact Result
- */
-export interface LeverageImpact {
-    category_key: string;
-    oee_opportunity_points: number;
-    throughput_gain_units: number;
-    sensitivity_score: number;
-}
-
-/**
- * Temporal Scrap Analysis Result
- */
-export interface TemporalScrapAnalysis {
-    patterns: Record<string, any>;
-    recommendations: string[];
-}
-
-/**
- * System OEE Analysis Result
- */
-export interface SystemOeeAnalysis {
-    system_oee: number;
-    bottleneck_machine?: string;
-    machines: Record<string, OeeResult>;
-}
-
-/**
- * Machine OEE Data for System Analysis
- */
-export interface MachineOeeData {
-    id: string;
-    name: string;
-    oee_data: OeeResult;
-    production_volume?: number;
-    planned_production_time?: number;
-}
-
-export type AggregationMethod = 'SimpleAverage' | 'ProductionWeighted' | 'TimeWeighted' | 'Minimum' | 'Multiplicative';
-
-/**
- * Request Payloads
- */
-export interface CalculateFullRequest {
-    input: OeeInput;
-    economic_parameters?: EconomicParameters;
-    include_sensitivity?: boolean;
-    sensitivity_variation?: number;
-    include_temporal_scrap?: boolean;
-}
-
-export interface CalculateFullResponse {
-    result: OeeResult;
-    sensitivity_analysis?: SensitivityAnalysis;
-    temporal_scrap_analysis?: TemporalScrapAnalysis;
-}
-
-export interface LeverageResponse {
-    leverage_impacts: LeverageImpact[];
-    baseline_oee: number;
-}
-
-export interface SystemCompareMethodsResponse {
-    comparisons: Record<string, { method: string; system_oee: number; use_case: string }>;
-    recommended_method: string;
-}
 
 /**
  * Configuration for the API client
@@ -158,64 +93,86 @@ export class OeeApiClient {
 
   /**
    * Calculate Full OEE Analysis
-   * Maps to: /calculate-full
+   * Maps to: POST /calculate-full
    */
   async calculateFull(request: CalculateFullRequest): Promise<ApiResponse<CalculateFullResponse>> {
     return this.post<CalculateFullResponse>('/calculate-full', request);
   }
 
   /**
-   * Basic Calculate (Legacy support)
-   * Maps to: /calculate
+   * Basic Calculate
+   * Maps to: POST /calculate
    */
-  async calculate(input: OeeInput): Promise<ApiResponse<{ result: OeeResult }>> {
-    return this.post<{ result: OeeResult }>('/calculate', { input });
+  async calculate(input: OeeInput): Promise<ApiResponse<CalculateResponse>> {
+    return this.post<CalculateResponse>('/calculate', { input } satisfies CalculateRequest);
   }
 
   /**
-   * Calculate with Economics only
-   * Maps to: /calculate-with-economics
+   * Calculate with Economics
+   * Maps to: POST /calculate-with-economics
    */
   async calculateWithEconomics(
     input: OeeInput, 
-    economic_parameters: EconomicParameters
-  ): Promise<ApiResponse<{ result: OeeResult }>> {
-    return this.post<{ result: OeeResult }>('/calculate-with-economics', { input, economic_parameters });
+    economicParameters: EconomicParameters
+  ): Promise<ApiResponse<CalculateResponse>> {
+    return this.post<CalculateResponse>('/calculate-with-economics', {
+      input,
+      economicParameters
+    } satisfies CalculateWithEconomicsRequest);
   }
 
   /**
    * Analyze Leverage
-   * Maps to: /leverage
+   * Maps to: POST /leverage
    */
   async analyzeLeverage(input: OeeInput): Promise<ApiResponse<LeverageResponse>> {
-    return this.post<LeverageResponse>('/leverage', { input });
+    return this.post<LeverageResponse>('/leverage', { input } satisfies LeverageRequest);
   }
 
   /**
    * Analyze Sensitivity
-   * Maps to: /sensitivity
+   * Maps to: POST /sensitivity
    */
-  async analyzeSensitivity(input: OeeInput, variation_percent: number = 10.0): Promise<ApiResponse<{ analysis: SensitivityAnalysis }>> {
-    return this.post<{ analysis: SensitivityAnalysis }>('/sensitivity', { input, variation_percent });
+  async analyzeSensitivity(
+    input: OeeInput, 
+    variationPercent: number = 10.0
+  ): Promise<ApiResponse<SensitivityResponse>> {
+    return this.post<SensitivityResponse>('/sensitivity', {
+      input,
+      variationPercent
+    } satisfies SensitivityRequest);
+  }
+
+  /**
+   * Analyze Temporal Scrap
+   * Maps to: POST /temporal-scrap
+   */
+  async analyzeTemporalScrap(request: TemporalScrapRequest): Promise<ApiResponse<TemporalScrapResponse>> {
+    return this.post<TemporalScrapResponse>('/temporal-scrap', request);
   }
 
   /**
    * System Aggregate OEE
-   * Maps to: /system/aggregate
+   * Maps to: POST /system/aggregate
    */
   async aggregateSystemOee(
     machines: MachineOeeData[], 
-    aggregation_method: AggregationMethod
-  ): Promise<ApiResponse<{ analysis: SystemOeeAnalysis }>> {
-    return this.post<{ analysis: SystemOeeAnalysis }>('/system/aggregate', { machines, aggregation_method });
+    aggregationMethod: AggregationMethod
+  ): Promise<ApiResponse<SystemAggregateResponse>> {
+    return this.post<SystemAggregateResponse>('/system/aggregate', {
+      machines,
+      aggregationMethod
+    } satisfies SystemAggregateRequest);
   }
 
   /**
    * Compare System Aggregation Methods
-   * Maps to: /system/compare-methods
+   * Maps to: POST /system/compare-methods
    */
   async compareSystemMethods(machines: MachineOeeData[]): Promise<ApiResponse<SystemCompareMethodsResponse>> {
-    return this.post<SystemCompareMethodsResponse>('/system/compare-methods', { machines });
+    return this.post<SystemCompareMethodsResponse>('/system/compare-methods', {
+      machines
+    } satisfies SystemCompareMethodsRequest);
   }
 
   /**
@@ -224,18 +181,16 @@ export class OeeApiClient {
   private async parseErrorResponse(response: Response): Promise<ApiError> {
     try {
       const data = await response.json();
-      // Ensure we always provide a fallback 'message' for legacy UI components
       return {
         code: data.code || `HTTP_${response.status}`,
-        message_key: data.message_key || 'api.error.unknown',
+        messageKey: data.message_key || data.messageKey || 'api.error.unknown',
         params: data.params || {},
-        message: data.message || data.message_key || response.statusText,
       };
     } catch {
       return {
         code: `HTTP_${response.status}`,
-        message_key: 'api.error.parse_failed',
-        message: response.statusText,
+        messageKey: 'api.error.parse_failed',
+        params: { statusText: response.statusText },
       };
     }
   }
@@ -248,22 +203,25 @@ export class OeeApiClient {
       if (error.name === 'AbortError') {
         return {
           code: 'TIMEOUT',
-          message_key: 'api.error.timeout',
-          message: 'Request timed out',
+          messageKey: 'api.error.timeout',
+          params: {},
         };
       }
       return {
         code: 'NETWORK_ERROR',
-        message_key: 'api.error.network',
-        message: error.message,
+        messageKey: 'api.error.network',
+        params: { message: error.message },
       };
     }
     return {
       code: 'UNKNOWN_ERROR',
-      message_key: 'api.error.unknown',
-      message: 'An unknown error occurred',
+      messageKey: 'api.error.unknown',
+      params: {},
     };
   }
 }
 
+/**
+ * Default API client instance
+ */
 export const oeeApi = new OeeApiClient();

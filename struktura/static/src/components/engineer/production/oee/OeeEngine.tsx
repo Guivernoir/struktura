@@ -192,14 +192,12 @@ const OeeEngine: React.FC<OeeEngineProps> = ({
           <div className="flex gap-1">
             <button
               onClick={() => switchView("assumptions")}
-              disabled={!input}
               className={`px-6 py-3 font-semibold text-sm transition-colors relative
                 ${
                   activeView === "assumptions"
                     ? "text-steel-700 dark:text-steel-300"
                     : "text-charcoal-500 dark:text-charcoal-400 hover:text-charcoal-700 dark:hover:text-charcoal-200"
                 }
-                ${!input ? "opacity-50 cursor-not-allowed" : ""}
               `}
             >
               Assumptions
@@ -304,34 +302,7 @@ const OeeEngine: React.FC<OeeEngineProps> = ({
         )}
 
         {/* View Content */}
-        {!input && (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">📊</div>
-            <h3 className="text-xl font-display font-semibold text-charcoal-900 dark:text-charcoal-100 mb-2">
-              No Input Data
-            </h3>
-            <p className="text-charcoal-600 dark:text-charcoal-400 mb-6">
-              Initialize with OEE input data to begin analysis
-            </p>
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-2xl mx-auto text-left">
-              <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
-                <strong>This component requires:</strong>
-              </p>
-              <ul className="list-disc list-inside text-sm text-blue-700 dark:text-blue-400 space-y-1 ml-4">
-                <li>Time model (planned time + allocations)</li>
-                <li>Production counts (total, good, scrap, rework)</li>
-                <li>Cycle time (ideal + optional average)</li>
-                <li>Machine context (IDs)</li>
-                <li>Analysis window (start/end timestamps)</li>
-              </ul>
-              <p className="text-xs text-blue-600 dark:text-blue-500 mt-4 italic">
-                See <code>models/input.ts</code> for complete structure
-              </p>
-            </div>
-          </div>
-        )}
-
-        {input && activeView === "assumptions" && (
+        {activeView === "assumptions" && (
           <AssumptionsView
             input={input}
             validation={result?.validation || null}

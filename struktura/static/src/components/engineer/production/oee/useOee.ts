@@ -1,22 +1,26 @@
 /**
  * useOee Hook
- * * Orchestrates OEE calculations using the full capabilities of the Rust backend.
- * Supports standard OEE, Economic Analysis, Sensitivity, and Leverage.
+ * 
+ * Orchestrates OEE calculations using the full capabilities of the Rust backend.
+ * All domain types imported from models - only UI state types defined here.
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { OeeInput, OeeResult, EconomicParameters } from './models';
-import { 
-  oeeApi, 
-  type ApiError, 
-  type SensitivityAnalysis, 
-  type TemporalScrapAnalysis, 
-  type CalculateFullResponse,
-  type LeverageResponse
-} from './api';
+import type {
+  OeeInput,
+  OeeResult,
+  EconomicParameters,
+  ApiError,
+  SensitivityAnalysis,
+  TemporalScrapAnalysis,
+  CalculateFullResponse,
+  LeverageResponse,
+} from './models';
+import { oeeApi } from './api';
 
 /**
- * Expanded Calculation State
+ * UI-specific calculation state
+ * (Not a domain type - pure UI state management)
  */
 export type OeeCalculationState =
   | { status: 'idle' }
@@ -30,6 +34,9 @@ export type OeeCalculationState =
     }
   | { status: 'error'; error: ApiError };
 
+/**
+ * Hook state interface
+ */
 export interface UseOeeState {
   // Inputs
   input: OeeInput | null;
@@ -49,6 +56,9 @@ export interface UseOeeState {
   lastCalculatedAt: Date | null;
 }
 
+/**
+ * Hook actions interface
+ */
 export interface UseOeeActions {
   // Input Management
   setInput: (input: OeeInput) => void;
@@ -59,29 +69,42 @@ export interface UseOeeActions {
   toggleSensitivity: (enabled: boolean) => void;
   toggleTemporalScrap: (enabled: boolean) => void;
   toggleLeverage: (enabled: boolean) => void;
+  setSensitivityVariation: (percent: number) => void;
   
   // Execution
   calculate: () => Promise<void>;
   reset: () => void;
 }
 
+/**
+ * Complete hook return type
+ */
 export interface UseOeeReturn extends UseOeeState, UseOeeActions {
   hasResult: boolean;
   hasError: boolean;
   isLoading: boolean;
 }
 
+/**
+ * Hook configuration options
+ */
 export interface UseOeeOptions {
-  autoCalculate?: boolean; // Use with caution
+  /** Auto-calculate on input change (use with caution) */
+  autoCalculate?: boolean;
+  /** Initial input data */
   initialInput?: OeeInput;
+  /** Initial economic parameters */
   initialEconomicParams?: EconomicParameters;
+  /** Initial configuration */
   initialConfig?: {
     includeSensitivity?: boolean;
     includeTemporalScrap?: boolean;
     includeLeverage?: boolean;
     sensitivityVariation?: number;
   };
+  /** Success callback */
   onSuccess?: (data: CalculateFullResponse) => void;
+  /** Error callback */
   onError?: (error: ApiError) => void;
 }
 
@@ -95,13 +118,21 @@ const DEFAULT_OPTIONS: UseOeeOptions = {
   }
 };
 
+/**
+ * OEE Calculator Hook
+ * 
+ * Manages OEE calculation state and orchestrates API calls.
+ * Supports full analysis including sensitivity, leverage, and temporal scrap.
+ */
 export function useOee(options: UseOeeOptions = {}): UseOeeReturn {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const initialConfig = { ...DEFAULT_OPTIONS.initialConfig, ...options.initialConfig };
 
   // --- State ---
   const [input, setInputState] = useState<OeeInput | null>(opts.initialInput || null);
-  const [economicParams, setEconomicParamsState] = useState<EconomicParameters | null>(opts.initialEconomicParams || null);
+  const [economicParams, setEconomicParamsState] = useState<EconomicParameters | null>(
+    opts.initialEconomicParams || null
+  );
   
   const [config, setConfig] = useState({
     includeSensitivity: initialConfig.includeSensitivity ?? true,
@@ -154,16 +185,24 @@ export function useOee(options: UseOeeOptions = {}): UseOeeReturn {
     setIsDirty(true);
   }, []);
 
+  const setSensitivityVariation = useCallback((percent: number) => {
+    setConfig(prev => ({ ...prev, sensitivityVariation: percent }));
+    setIsDirty(true);
+  }, []);
+
   const reset = useCallback(() => {
     setInputState(null);
     setEconomicParamsState(null);
     setCalculation({ status: 'idle' });
     setIsDirty(false);
+    setLastCalculatedAt(null);
   }, []);
 
   /**
    * Primary Calculation Function
-   * Uses /calculate-full to fetch all requested data in one go
+   * 
+   * Uses /calculate-full for comprehensive analysis,
+   * then makes additional calls for leverage if requested.
    */
   const calculate = useCallback(async () => {
     if (!input) return;
@@ -171,44 +210,48 @@ export function useOee(options: UseOeeOptions = {}): UseOeeReturn {
     setCalculation({ status: 'loading' });
     
     try {
-      // Use the full analysis endpoint
+      // Primary calculation with sensitivity and temporal scrap
       const response = await oeeApi.calculateFull({
         input,
-        economic_parameters: economicParams || undefined,
-        include_sensitivity: config.includeSensitivity,
-        include_temporal_scrap: config.includeTemporalScrap,
-        sensitivity_variation: config.sensitivityVariation
+        economicParameters: economicParams || undefined,
+        includeSensitivity: config.includeSensitivity,
+        includeTemporalScrap: config.includeTemporalScrap,
+        sensitivityVariation: config.sensitivityVariation
       });
       
-      if (response.success) {
-        let leverage: LeverageResponse | undefined;
-        if (config.includeLeverage) {
-          const levRes = await oeeApi.analyzeLeverage(input);
-          if (levRes.success) {
-            leverage = levRes.data;
-          }
-          // If error, ignore for now
-        }
-
-        setCalculation({ 
-          status: 'success', 
-          result: response.data.result,
-          sensitivity: response.data.sensitivity_analysis,
-          temporalScrap: response.data.temporal_scrap_analysis,
-          leverage
-        });
-        setLastCalculatedAt(new Date());
-        setIsDirty(false);
-        opts.onSuccess?.(response.data);
-      } else {
+      if (!response.success) {
         setCalculation({ status: 'error', error: response.error });
         opts.onError?.(response.error);
+        return;
       }
+
+      // Additional leverage analysis if requested
+      let leverage: LeverageResponse | undefined;
+      if (config.includeLeverage) {
+        const levResponse = await oeeApi.analyzeLeverage(input);
+        if (levResponse.success) {
+          leverage = levResponse.data;
+        }
+        // Ignore leverage errors - don't fail the whole calculation
+      }
+
+      setCalculation({ 
+        status: 'success', 
+        result: response.data.result,
+        sensitivity: response.data.sensitivityAnalysis,
+        temporalScrap: response.data.temporalScrapAnalysis,
+        leverage
+      });
+      
+      setLastCalculatedAt(new Date());
+      setIsDirty(false);
+      opts.onSuccess?.(response.data);
+      
     } catch (error) {
       const apiError: ApiError = {
         code: 'UNEXPECTED_ERROR',
-        message_key: 'api.error.unexpected',
-        message: error instanceof Error ? error.message : 'Calculation failed',
+        messageKey: 'api.error.unexpected',
+        params: { message: error instanceof Error ? error.message : 'Unknown error' },
       };
       setCalculation({ status: 'error', error: apiError });
       opts.onError?.(apiError);
@@ -217,12 +260,14 @@ export function useOee(options: UseOeeOptions = {}): UseOeeReturn {
 
   // --- Effects ---
 
-  // Auto-calculate effect
+  /**
+   * Auto-calculate effect (debounced)
+   */
   useEffect(() => {
     if (opts.autoCalculate && input && isDirty) {
       const timeoutId = setTimeout(() => {
         calculate();
-      }, 500); // Debounce auto-calculation
+      }, 500);
       return () => clearTimeout(timeoutId);
     }
   }, [input, economicParams, opts.autoCalculate, isDirty, calculate]);
@@ -243,6 +288,7 @@ export function useOee(options: UseOeeOptions = {}): UseOeeReturn {
     toggleSensitivity,
     toggleTemporalScrap,
     toggleLeverage,
+    setSensitivityVariation,
     calculate,
     reset,
 
